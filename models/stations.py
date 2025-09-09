@@ -1,6 +1,7 @@
 from enum import Enum
-from datetime import datetime
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel
+from models.measurements import Measurement
+from settings import settings
 
 
 class WindDirection(int, Enum):
@@ -21,17 +22,14 @@ class Station(BaseModel, frozen=True):
     longitude: float
     location: str
 
-
-class Measurement(BaseModel):
-    wind_intensity: float = Field(alias="intensidadeVentoKM")
-    temperature: float = Field(alias="temperatura")
-    radiation: float = Field(alias="radiacao")
-    wind_direction: WindDirection = Field(alias="idDireccVento")
-    accumulated_precipitation: float = Field(alias="precAcumulada")
-    pressure: float = Field(alias="pressao")
-    humidity: int = Field(alias="humidade")
-    time: datetime
-
-    @field_serializer("time")
-    def serialize_time(self, time: datetime, _info):
-        return time.isoformat()
+    def create_message(self, measurement: Measurement) -> dict:
+        return {
+            "topic": f"{settings.hono.device_id}/{self.id}/things/twin/commands/modify",
+            "path": "/",
+            "headers": {},
+            "value": {
+                "policyId": settings.hono.policy_id,
+                "attributes": self.model_dump(),
+                "features": {"metereology": {"properties": measurement.model_dump()}},
+            },
+        }
