@@ -35,6 +35,7 @@ class Settings(BaseSettings):
 
     hono: HonoSettings = HonoSettings()
     env: Environment = Environment.PROD
+    polling_interval: int = 3600
 
     @classmethod
     def settings_customise_sources(
