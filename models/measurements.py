@@ -1,5 +1,18 @@
 from datetime import datetime
 from pydantic import BaseModel, Field, field_serializer
+from enum import Enum
+
+
+class WindDirection(int, Enum):
+    NORTH_WEST = 8
+    WEST = 7
+    SOUTH_WEST = 6
+    SOUTH = 5
+    SOUTH_EAST = 4
+    EAST = 3
+    NORTH_EAST = 2
+    NORTH = 1
+    UNKNOWN = 0
 
 
 class Measurement(BaseModel):
