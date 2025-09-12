@@ -22,7 +22,10 @@ async def update_meteo() -> None:
     data = [station for station, _ in measurements]
     await StationSingleton.set_stations(data)
     assert hono is not None
-    await hono.post_measurements(measurements)
+    logger.debug("Posting received measurements")
+
+    for station, measurement in measurements:
+        await hono.send_telemetry(station.create_message(measurement))
 
 
 @asynccontextmanager

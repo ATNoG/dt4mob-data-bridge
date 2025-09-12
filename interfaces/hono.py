@@ -1,12 +1,8 @@
 from hashlib import sha512
-from typing import List, Tuple
 
 from aiohttp import ClientResponseError, ClientSession
 from loguru import logger
 
-from session import SessionSingleton
-from models.measurements import Measurement
-from models.stations import Station
 from settings import Environment, settings
 
 
@@ -69,25 +65,19 @@ class HonoDevice:
 
             raise RuntimeError("The device's credentials could not be created")
 
-    async def post_measurements(self, measurements: List[Tuple[Station, Measurement]]):
-        logger.debug("Posting received measurements")
-
+    async def send_telemetry(self, message: dict):
         url = f"{settings.hono.http_adapter}telemetry"
+        resp = await self.session.post(
+            url,
+            json=message,
+            ssl=settings.env == Environment.PROD,
+        )
 
-        for station, measurement in measurements:
-            logger.debug("Posting measurement for {}", station.id)
-            resp = await self.session.post(
-                url,
-                json=station.create_message(measurement),
-                ssl=settings.env == Environment.PROD,
+        try:
+            resp.raise_for_status()
+        except ClientResponseError as err:
+            logger.error(
+                "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
+                err.status,
+                err.message,
             )
-
-            try:
-                resp.raise_for_status()
-            except ClientResponseError as err:
-                logger.error(
-                    "An error has occured while updating digital twin with id {}, status={}, message={}",
-                    station.id,
-                    err.status,
-                    err.message,
-                )
