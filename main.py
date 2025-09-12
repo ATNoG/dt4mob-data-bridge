@@ -33,7 +33,7 @@ async def lifespan(app: FastAPI):
     logger.info("STARTUP: Creating Hono device")
 
     global hono
-    hono = HonoDevice()
+    hono = HonoDevice(SessionSingleton.get_session())
     await hono.create_hono_device()
 
     logger.info("Hono device created successfully")

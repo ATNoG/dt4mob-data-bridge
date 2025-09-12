@@ -1,7 +1,7 @@
 from hashlib import sha512
 from typing import List, Tuple
 
-from aiohttp import ClientResponseError
+from aiohttp import ClientResponseError, ClientSession
 from loguru import logger
 
 from session import SessionSingleton
@@ -11,8 +11,8 @@ from settings import Environment, settings
 
 
 class HonoDevice:
-    def __init__(self):
-        self.session = SessionSingleton.get_session()
+    def __init__(self, session: ClientSession):
+        self.session = session
         self.id = settings.hono.device_id
         self.tenant = settings.hono.tenant_id
         self.passwd = settings.hono.passwd
