@@ -17,7 +17,7 @@ async def get_measurements() -> List[Tuple[Station, Measurement]]:
     since this is the only endpoint with Station information
     """
     session = SessionSingleton.get_session()
-    logger.info("Querying IPMA for new measurements")
+    logger.debug("Querying IPMA for new measurements")
     geojson = await session.get(
         "https://api.ipma.pt/open-data/observation/meteorology/stations/obs-surface.geojson"
     )
@@ -38,7 +38,7 @@ async def get_measurements() -> List[Tuple[Station, Measurement]]:
         measurement_datetime = datetime.strptime(
             d["properties"]["time"], "%Y-%m-%dT%H:%M:%S"
         ).replace(tzinfo=timezone.utc)
-        if (current_time - measurement_datetime).total_seconds() > 3600:
+        if (current_time - measurement_datetime).total_seconds() > 7200:
             continue
 
         if d["properties"]["idDireccVento"] == 9:

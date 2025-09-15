@@ -10,11 +10,7 @@ class SessionSingleton:
     @classmethod
     def get_session(cls) -> ClientSession:
         if cls.client is None:
-            auth = BasicAuth(
-                login=f"{settings.hono.device_id}@{settings.hono.tenant_id}",
-                password=settings.hono.passwd,
-            )
-            cls.client = ClientSession(auth=auth)
+            cls.client = ClientSession()
 
         return cls.client
 

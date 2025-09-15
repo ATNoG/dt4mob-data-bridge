@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 from pydantic import AnyHttpUrl, BaseModel
 from pydantic_settings import (
     BaseSettings,
@@ -19,9 +20,23 @@ class HonoSettings(BaseModel):
     device_registry: AnyHttpUrl = AnyHttpUrl("http://localhost:28443")
     http_adapter: AnyHttpUrl = AnyHttpUrl("http://localhost:8443")
     tenant_id: str = "DEFAULT_TENANT"
-    device_id: str = ""
-    passwd: str = "secret"
+
+
+class DeviceSettings(BaseModel):
+    id: str = ""
     policy_id: str = ""
+    passwd: str = "secret"
+
+
+class WazeSettings(BaseModel):
+    area_radius: int = 1000
+
+
+class Toll(BaseModel):
+    name: str
+    road: str
+    latitude: float
+    longitude: float
 
 
 class Settings(BaseSettings):
@@ -36,6 +51,9 @@ class Settings(BaseSettings):
     hono: HonoSettings = HonoSettings()
     env: Environment = Environment.PROD
     polling_interval: int = 3600
+    traffic: WazeSettings = WazeSettings()
+    tolls: List[Toll] = []
+    devices: dict[str, DeviceSettings] = {}
 
     @classmethod
     def settings_customise_sources(
