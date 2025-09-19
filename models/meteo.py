@@ -1,6 +1,7 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, field_serializer
 from enum import Enum
+
+from pydantic import BaseModel, Field, field_serializer
 
 
 class WindDirection(int, Enum):
@@ -28,3 +29,16 @@ class Measurement(BaseModel):
     @field_serializer("time")
     def serialize_time(self, time: datetime):
         return time.isoformat()
+
+
+class Station(BaseModel, frozen=True):
+    id: int
+    latitude: float
+    longitude: float
+    location: str
+
+    def create_message(self, measurement: Measurement) -> dict:
+        return {
+            "attributes": self.model_dump(),
+            "features": {"metereology": {"properties": measurement.model_dump()}},
+        }

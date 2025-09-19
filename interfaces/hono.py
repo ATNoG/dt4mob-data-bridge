@@ -1,6 +1,6 @@
 from hashlib import sha512
-import json
 from base64 import b64encode
+from pydantic import BaseModel
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession
 from loguru import logger
@@ -78,14 +78,10 @@ class HonoDevice:
 
             raise RuntimeError("The device's credentials could not be created")
 
-    async def send_telemetry(self, device_id, message: dict):
+    async def send_telemetry(self, message: BaseModel):
         url = f"{settings.hono.http_adapter}telemetry"
-        jason = {
-            "topic": f"{self.id}/{device_id}/things/twin/commands/modify",
-            "path": "/",
-            "headers": {},
-            "value": {"policyId": self.policyId, **message},
-        }
+
+        jason = message.model_dump(exclude_none=True)
 
         resp = await self.session.post(
             url,
@@ -98,8 +94,7 @@ class HonoDevice:
             resp.raise_for_status()
         except ClientResponseError as err:
             logger.error(
-                "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {} {}",
+                "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
                 err.status,
                 err.message,
-                f"\n\t Length: {len(json.dumps(jason))}" if err.status == 413 else "",
             )

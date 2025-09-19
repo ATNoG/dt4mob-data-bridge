@@ -5,9 +5,9 @@ from typing import List, Tuple
 from aiohttp import ClientResponseError
 from loguru import logger
 
-from session import SessionSingleton
-from models.measurements import Measurement
-from models.stations import Station
+from storage import SessionSingleton
+from models.meteo import Measurement
+from models.meteo import Station
 
 
 async def get_measurements() -> List[Tuple[Station, Measurement]]:

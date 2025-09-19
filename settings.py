@@ -53,7 +53,7 @@ class Settings(BaseSettings):
     polling_interval: int = 3600
     traffic: WazeSettings = WazeSettings()
     tolls: List[Toll] = []
-    devices: dict[str, DeviceSettings] = {}
+    devices: List[DeviceSettings] = []
 
     @classmethod
     def settings_customise_sources(

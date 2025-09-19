@@ -89,6 +89,3 @@ class WazeRequest(BaseModel):
     @field_serializer("startTimeMillis", "endTimeMillis")
     def serialize_timestamp(self, dt: datetime):
         return int(dt.timestamp() * 100)
-
-    def create_message(self):
-        return {"features": {"traffic": {"properties": self.model_dump()}}}

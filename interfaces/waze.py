@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from models.waze import WazeRequest
-from session import SessionSingleton
+from storage import SessionSingleton
 from settings import settings
 
 
