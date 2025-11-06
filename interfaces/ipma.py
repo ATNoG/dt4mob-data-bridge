@@ -5,7 +5,7 @@ from typing import List, Tuple
 from aiohttp import ClientResponseError
 from loguru import logger
 
-from storage import SessionSingleton
+from storage.session import SessionSingleton
 from models.meteo import Measurement
 from models.meteo import Station
 

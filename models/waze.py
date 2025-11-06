@@ -1,12 +1,8 @@
 from enum import Enum
 from datetime import datetime
 from typing import List, Literal, Optional, Union
-from pydantic import BaseModel, Field, field_serializer
-
-
-class Point(BaseModel):
-    longitude: float = Field(alias="x")
-    latitude: float = Field(alias="y")
+from pydantic import BaseModel, field_serializer
+from models.geo import Point
 
 
 class AlertType(str, Enum):

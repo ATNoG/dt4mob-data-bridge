@@ -5,13 +5,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi_utils.tasks import repeat_every
 from loguru import logger
 
-from devices.meteo import MeteoDevice
-from devices.traffic import TrafficDevice
-from interfaces.hono import HonoDevice
 from interfaces.ipma import get_measurements
 from interfaces.waze import get_traffic_data
-from settings import settings
-from storage import DevicesSingleton, SessionSingleton, StationSingleton
+from interfaces.signs import get_signs
+from settings import settings, DeviceType
+from storage.device import DevicesSingleton
+from storage.session import SessionSingleton
+from storage.station import StationSingleton
 
 
 @repeat_every(seconds=settings.polling_interval)
@@ -24,8 +24,10 @@ async def update_meteo() -> None:
     await StationSingleton.set_stations(data)
 
     logger.debug("Posting received measurements")
-    meteo = DevicesSingleton.get_device("meteo")
-    assert isinstance(meteo, MeteoDevice)
+    meteo = DevicesSingleton.get_device(DeviceType.METEO)
+    if meteo is None:
+        logger.error("Meteo device not found. Cannot update measurements.")
+        return
 
     for station, measurement in measurements:
         logger.debug("Updating information for {}", station.id)
@@ -35,51 +37,75 @@ async def update_meteo() -> None:
 @repeat_every(seconds=settings.polling_interval)
 async def update_traffic() -> None:
     logger.info("Updating traffic stations' information")
-    traffic_device = DevicesSingleton.get_device("traffic")
-    assert isinstance(traffic_device, TrafficDevice)
+    traffic_device = DevicesSingleton.get_device(DeviceType.TRAFFIC)
+    if traffic_device is None:
+        logger.error("Traffic device not found. Cannot update measurements.")
+        return
 
+    tasks = []
     for toll in settings.tolls:
+        logger.debug("Fetching data for {}", toll.name)
+        tasks.append(get_traffic_data(toll.latitude, toll.longitude, toll.area_radius))
+
+    traffic_data = await asyncio.gather(*tasks)
+    for i, toll in enumerate(settings.tolls):
         logger.debug("Updating information for {}", toll.name)
-        data = await get_traffic_data(toll.latitude, toll.longitude)
-        await traffic_device.modify(toll, data)
+        await traffic_device.modify(toll, traffic_data[i])
+
+
+async def update_signs() -> None:
+    logger.info("Updating road sign information")
+    sign_device = DevicesSingleton.get_device(DeviceType.SIGN)
+    if sign_device is None:
+        logger.error("Sign device not found. Cannot update road sign data.")
+        return
+
+    signs = get_signs()
+    logger.debug("Successfully got all the signs")
+    i = 0
+    for sign in signs:
+
+        logger.debug("Updating sign {}", f"{sign.type}-{sign.objectID}")
+        await sign_device.modify(None, sign)
+        await asyncio.sleep(
+            0.01
+        )  # There are a lot of signs, lets allow the rest of the program to execute
+
+        # There are REALLY a lot of signs, lets let the infrastructure not die
+        i += 1
+        if i % 100 == 0:
+            logger.debug(
+                "{} requests sent in total, cooling down. Will send another 100 requests in 5 seconds",
+                i,
+            )
+            await asyncio.sleep(5)
+
+    logger.debug("Finished updating all the signs")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.warning("Starting async event loop")
-    loop = asyncio.new_event_loop()
 
     logger.info("STARTUP: Creating Hono devices")
 
     logger.debug("Existing devices: {}", settings.devices)
     for device in settings.devices:
-        hono_conn = HonoDevice(
-            SessionSingleton.get_session(), device.id, device.passwd, device.policy_id
-        )
+        hono_conn = DevicesSingleton.add_device(device)
 
-        match device.id:
-            case "meteo":
-                DevicesSingleton.add_device(MeteoDevice(hono_conn))
-            case "traffic":
-                DevicesSingleton.add_device(TrafficDevice(hono_conn))
-            case _:
-                raise RuntimeError("This type of device has not yet been implemented")
-
-        logger.debug("creating device {}", device.id)
+        logger.debug("creating device {}", device.type.value)
         await hono_conn.create_hono_device()
 
     logger.info("Hono devices created successfully")
 
-    await update_meteo()
-    await update_traffic()
+    asyncio.create_task(update_meteo())
+    asyncio.create_task(update_traffic())
+    asyncio.create_task(update_signs())
 
-    yield
+    yield  # Run the main application loop
 
     logger.info("Closing AioHttp session")
     await SessionSingleton.close_session()
     logger.warning("Stopping async event loop")
-    loop.stop()
-    loop.close()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -87,7 +113,7 @@ app = FastAPI(lifespan=lifespan)
 
 @app.get("/meteorology")
 async def get_closest_stations(lat: float, lon: float):
-    device = DevicesSingleton.get_device("meteo")
+    device = DevicesSingleton.get_device(DeviceType.METEO)
     if device is None:
         raise HTTPException(
             status_code=503, detail="No stations are currently available"

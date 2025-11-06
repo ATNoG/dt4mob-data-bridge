@@ -11,6 +11,7 @@ dependencies = [
   "geopy>=2.4.1",
   "fastapi-utils>=0.8.0",
   "typing-inspect>=0.9.0",
+  "pyproj>=3.7.2",
 ]
 
 [dependency-groups]

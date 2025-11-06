@@ -1,7 +1,7 @@
 from devices.ditto import Device
 from models.ditto import Feature
 from models.waze import WazeRequest
-from storage import StationSingleton
+from storage.station import StationSingleton
 from settings import Toll
 
 
@@ -23,6 +23,8 @@ class TrafficDevice(Device):
         }
 
         features = {"traffic": Feature(properties=data.model_dump())}
-        message = self.modify_message(device.name, attributes, features=features)
+        message = self.modify_message(
+            device.name, attributes=attributes, features=features
+        )
 
         await self._hono.send_telemetry(message)

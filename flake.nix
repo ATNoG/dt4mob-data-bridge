@@ -16,8 +16,8 @@
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           uv
-		  pyright
-		  black
+          pyright
+          black
         ];
       };
     });

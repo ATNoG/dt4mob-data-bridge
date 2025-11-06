@@ -14,6 +14,12 @@ class Environment(str, Enum):
     DEV = "dev"
 
 
+class DeviceType(str, Enum):
+    TRAFFIC = "traffic"
+    METEO = "meteo"
+    SIGN = "sign"
+
+
 class HonoSettings(BaseModel):
     """Settings for establishing a connection with the Hono Instance"""
 
@@ -23,13 +29,9 @@ class HonoSettings(BaseModel):
 
 
 class DeviceSettings(BaseModel):
-    id: str = ""
+    type: DeviceType = DeviceType.TRAFFIC
     policy_id: str = ""
     passwd: str = "secret"
-
-
-class WazeSettings(BaseModel):
-    area_radius: int = 1000
 
 
 class Toll(BaseModel):
@@ -37,6 +39,11 @@ class Toll(BaseModel):
     road: str
     latitude: float
     longitude: float
+    area_radius: int = 1000
+
+
+class SignData(BaseModel):
+    dir: str = ""
 
 
 class Settings(BaseSettings):
@@ -51,9 +58,9 @@ class Settings(BaseSettings):
     hono: HonoSettings = HonoSettings()
     env: Environment = Environment.PROD
     polling_interval: int = 3600
-    traffic: WazeSettings = WazeSettings()
     tolls: List[Toll] = []
     devices: List[DeviceSettings] = []
+    signs: SignData = SignData()
 
     @classmethod
     def settings_customise_sources(

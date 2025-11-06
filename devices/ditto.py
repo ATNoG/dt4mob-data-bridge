@@ -24,7 +24,7 @@ class Device(ABC):
         self,
         thingName: str,
         attributes=None,
-        features: Optional[Dict[str, Feature]] = None,
+        features: Optional[Dict[str, Feature]] = {},
     ) -> DittoProtocolEnvelope:
         message_topic = Topic(
             namespace=self._hono.id,

@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import BaseModel
 
 from models.waze import WazeRequest
-from storage import SessionSingleton
+from storage.session import SessionSingleton
 from settings import settings
 
 
@@ -33,9 +33,9 @@ def _get_limits(radius: float, lat: float, lon: float) -> _Limits:
     )
 
 
-async def get_traffic_data(lat: float, lon: float):
+async def get_traffic_data(lat: float, lon: float, radius: float):
     session = SessionSingleton.get_session()
-    lim = _get_limits(settings.traffic.area_radius, lat, lon)
+    lim = _get_limits(radius, lat, lon)
     url = f"https://www.waze.com/live-map/api/georss?top={lim.top}&bottom={lim.bottom}&left={lim.left}&right={lim.right}&env=row&types=traffic,alerts"
     logger.info("Getting Alerts and Jams for ({},{})", lat, lon)
     logger.debug("The url is: {}", url)
