@@ -1,6 +1,7 @@
 from hashlib import sha512
 from base64 import b64encode
 from pydantic import BaseModel
+from json import dumps
 
 from aiohttp import BasicAuth, ClientResponseError, ClientSession
 from loguru import logger
@@ -93,8 +94,16 @@ class HonoDevice:
         try:
             resp.raise_for_status()
         except ClientResponseError as err:
-            logger.error(
-                "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
-                err.status,
-                err.message,
-            )
+            if err.status == 413:
+                dump = dumps(jason)
+                logger.error(
+                    "The entity is too large. \n\t Object: {}\n\t Size: {}",
+                    dump,
+                    len(dump.encode("utf-8")),
+                )
+            else:
+                logger.error(
+                    "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
+                    err.status,
+                    err.message,
+                )

@@ -8,10 +8,22 @@ from loguru import logger
 from interfaces.ipma import get_measurements
 from interfaces.waze import get_traffic_data
 from interfaces.signs import get_signs
+from interfaces.barriers import get_barrier
 from settings import settings, DeviceType
 from storage.device import DevicesSingleton
 from storage.session import SessionSingleton
 from storage.station import StationSingleton
+
+
+async def batch_cooldown(i: int):
+    if i % 100 == 0:
+        logger.debug(
+            "{} requests sent in total, cooling down. Will send another 100 requests in 5 seconds",
+            i,
+        )
+        await asyncio.sleep(5)
+
+    return i + 1
 
 
 @repeat_every(seconds=settings.polling_interval)
@@ -67,20 +79,29 @@ async def update_signs() -> None:
 
         logger.debug("Updating sign {}", f"{sign.type}-{sign.objectID}")
         await sign_device.modify(None, sign)
-        await asyncio.sleep(
-            0.01
-        )  # There are a lot of signs, lets allow the rest of the program to execute
-
-        # There are REALLY a lot of signs, lets let the infrastructure not die
-        i += 1
-        if i % 100 == 0:
-            logger.debug(
-                "{} requests sent in total, cooling down. Will send another 100 requests in 5 seconds",
-                i,
-            )
-            await asyncio.sleep(5)
+        # i = await batch_cooldown(i)
 
     logger.debug("Finished updating all the signs")
+
+
+async def update_barriers() -> None:
+    logger.info("Updating barrier information")
+    barrier_device = DevicesSingleton.get_device(DeviceType.BARRIER)
+    if barrier_device is None:
+        logger.error("Barrier device not found. Cannot update road sign data.")
+        return
+
+    barriers = get_barrier()
+    logger.debug("Successfully got all the signs")
+    i = 0
+    for barrier in barriers:
+
+        logger.debug("Updating barrier {}", barrier.objectID)
+        await barrier_device.modify(None, barrier)
+        await asyncio.sleep(0.01)
+        i = await batch_cooldown(i)
+
+    logger.debug("Finished updating all the barriers")
 
 
 @asynccontextmanager
@@ -100,6 +121,7 @@ async def lifespan(app: FastAPI):
     asyncio.create_task(update_meteo())
     asyncio.create_task(update_traffic())
     asyncio.create_task(update_signs())
+    asyncio.create_task(update_barriers())
 
     yield  # Run the main application loop
 
