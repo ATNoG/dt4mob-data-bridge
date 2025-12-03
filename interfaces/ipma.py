@@ -8,6 +8,7 @@ from loguru import logger
 from storage.session import SessionSingleton
 from models.meteo import Measurement
 from models.meteo import Station
+from models.geo import Point
 
 
 async def get_measurements() -> List[Tuple[Station, Measurement]]:
@@ -43,13 +44,15 @@ async def get_measurements() -> List[Tuple[Station, Measurement]]:
 
         if d["properties"]["idDireccVento"] == 9:
             d["properties"]["idDireccVento"] = 0
+        point = Point(
+            x=d["geometry"]["coordinates"][0], y=d["geometry"]["coordinates"][1]
+        )
         res.append(
             (
                 Station(
                     id=d["properties"]["idEstacao"],
-                    latitude=d["geometry"]["coordinates"][1],
-                    longitude=d["geometry"]["coordinates"][0],
-                    location=d["properties"]["localEstacao"],
+                    location=point,
+                    location_name=d["properties"]["localEstacao"],
                 ),
                 Measurement(**d["properties"]),
             )

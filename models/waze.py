@@ -64,7 +64,7 @@ class Jam(BaseModel):
     country: str
     level: int
     city: str
-    line: List[Point]
+    geometry: List[Point]
     speedKMH: float
     length: int
     roadType: int

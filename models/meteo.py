@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_serializer
+from models.geo import Point
 
 
 class WindDirection(int, Enum):
@@ -33,9 +34,8 @@ class Measurement(BaseModel):
 
 class Station(BaseModel, frozen=True):
     id: int
-    latitude: float
-    longitude: float
-    location: str
+    location: Point
+    location_name: str
 
     def create_message(self, measurement: Measurement) -> dict:
         return {
