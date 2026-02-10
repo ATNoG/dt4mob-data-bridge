@@ -6,7 +6,7 @@ from fastapi_utils.tasks import repeat_every
 from loguru import logger
 
 from interfaces.equivia import get_equivia
-from interfaces.ipma import get_measurements
+from interfaces.ipma import get_meteorology_measurements
 from interfaces.waze import get_traffic_data
 from interfaces.signs import get_signs
 from interfaces.barriers import get_barrier
@@ -30,7 +30,7 @@ async def batch_cooldown(i: int):
 @repeat_every(seconds=settings.polling_interval)
 async def update_meteo() -> None:
     logger.info("Updating metereology stations' information")
-    measurements = await get_measurements()
+    measurements = await get_meteorology_measurements()
     logger.debug("Got measurements from IPMA")
 
     data = [station for station, _ in measurements]

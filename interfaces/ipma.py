@@ -11,7 +11,7 @@ from models.meteo import Station
 from models.geo import Point
 
 
-async def get_measurements() -> List[Tuple[Station, Measurement]]:
+async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
     """
     Function responsible for getting the existing stations and measurements from IPMA.pt
     This function utilizes IPMA's Open API to get the GeoJSON from the last measurements,
