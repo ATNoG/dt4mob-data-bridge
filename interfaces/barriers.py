@@ -1,4 +1,3 @@
-import os
 import json
 from loguru import logger
 from pyproj.transformer import Transformer
@@ -41,5 +40,5 @@ def get_barrier() -> List[Barrier]:
     logger.debug("GeoGSON loaded with success")
     ret.extend(generate_barrier(jason))
 
-    logger.debug("Got a total of {} signs", len(ret))
+    logger.debug("Got a total of {} barriers", len(ret))
     return ret

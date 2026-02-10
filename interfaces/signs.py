@@ -15,7 +15,7 @@ def read_files(dir: str):
     files = os.listdir(dir)
 
     for file in files:
-        logger.debug("Attempting to load the GeoJSON data in {}", file)
+        logger.debug("Attempting to load the Sign GeoJSON data in {}", file)
         with open(f"{dir}/{file}", "r") as f:
             yield f.read()
 

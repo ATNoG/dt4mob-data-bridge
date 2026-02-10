@@ -2,7 +2,7 @@ from enum import Enum
 from datetime import datetime
 from typing import List, Literal, Optional, Union
 from pydantic import BaseModel, field_serializer
-from models.geo import Point
+from models.geo import Point, PolyLine
 
 
 class AlertType(str, Enum):
@@ -64,7 +64,7 @@ class Jam(BaseModel):
     country: str
     level: int
     city: str
-    geometry: List[Point]
+    geometry: PolyLine
     speedKMH: float
     length: int
     roadType: int

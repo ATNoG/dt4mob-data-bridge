@@ -19,6 +19,7 @@ class DeviceType(str, Enum):
     METEO = "meteo"
     SIGN = "sign"
     BARRIER = "barrier"
+    EQUIVIA = "equivia"
 
 
 class HonoSettings(BaseModel):
@@ -51,6 +52,10 @@ class BarrierData(BaseModel):
     dir: str = ""
 
 
+class EquiviaData(BaseModel):
+    dir: str = ""
+
+
 class Settings(BaseSettings):
     """Example loading values from the table used by default."""
 
@@ -67,6 +72,7 @@ class Settings(BaseSettings):
     devices: List[DeviceSettings] = []
     signs: SignData = SignData()
     barriers: BarrierData = BarrierData()
+    equivia: EquiviaData = EquiviaData()
 
     @classmethod
     def settings_customise_sources(

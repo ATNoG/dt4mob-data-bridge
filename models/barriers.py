@@ -137,5 +137,5 @@ class Barrier(BaseModel):
     def str_to_int(cls, value: str) -> Optional[int]:
         try:
             return int(value)
-        except:
+        except ValueError:
             return None

@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi_utils.tasks import repeat_every
 from loguru import logger
 
+from interfaces.equivia import get_equivia
 from interfaces.ipma import get_measurements
 from interfaces.waze import get_traffic_data
 from interfaces.signs import get_signs
@@ -17,7 +18,7 @@ from storage.station import StationSingleton
 
 async def batch_cooldown(i: int):
     if i % 100 == 0:
-        logger.debug(
+        logger.info(
             "{} requests sent in total, cooling down. Will send another 100 requests in 5 seconds",
             i,
         )
@@ -74,12 +75,12 @@ async def update_signs() -> None:
 
     signs = get_signs()
     logger.debug("Successfully got all the signs")
-    i = 0
+    i = 1
     for sign in signs:
 
         logger.debug("Updating sign {}", f"{sign.type}-{sign.objectID}")
         await sign_device.modify(None, sign)
-        # i = await batch_cooldown(i)
+        i = await batch_cooldown(i)
 
     logger.debug("Finished updating all the signs")
 
@@ -92,8 +93,8 @@ async def update_barriers() -> None:
         return
 
     barriers = get_barrier()
-    logger.debug("Successfully got all the signs")
-    i = 0
+    logger.debug("Successfully got all the barriers")
+    i = 1
     for barrier in barriers:
 
         logger.debug("Updating barrier {}", barrier.objectID)
@@ -102,6 +103,25 @@ async def update_barriers() -> None:
         i = await batch_cooldown(i)
 
     logger.debug("Finished updating all the barriers")
+
+
+async def update_equivia() -> None:
+    logger.info("Updating equivia information")
+    equivia_device = DevicesSingleton.get_device(DeviceType.EQUIVIA)
+    if equivia_device is None:
+        logger.error("Equivia device not found. Cannot update road feature data.")
+        return
+
+    equivia = get_equivia()
+    logger.debug("Successfully got all the road features")
+    i = 1
+    for thing in equivia:
+
+        logger.debug("Updating road-feature {}", f"{thing.type}-{thing.object_id}")
+        await equivia_device.modify(None, thing)
+        i = await batch_cooldown(i)
+
+    logger.debug("Finished updating all the road features")
 
 
 @asynccontextmanager
@@ -119,9 +139,10 @@ async def lifespan(app: FastAPI):
     logger.info("Hono devices created successfully")
 
     asyncio.create_task(update_meteo())
-    asyncio.create_task(update_traffic())
-    asyncio.create_task(update_signs())
-    asyncio.create_task(update_barriers())
+    # asyncio.create_task(update_traffic())
+    # asyncio.create_task(update_signs())
+    # asyncio.create_task(update_barriers())
+    # asyncio.create_task(update_equivia())
 
     yield  # Run the main application loop
 

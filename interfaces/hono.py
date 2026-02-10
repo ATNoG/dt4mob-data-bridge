@@ -97,13 +97,30 @@ class HonoDevice:
             if err.status == 413:
                 dump = dumps(jason)
                 logger.error(
-                    "The entity is too large. \n\t Object: {}\n\t Size: {}",
-                    dump,
+                    "The entity is too large. \n\t n\t Size: {}",
                     len(dump.encode("utf-8")),
                 )
+
+                print_size("root", jason)
+
             else:
                 logger.error(
                     "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
                     err.status,
                     err.message,
                 )
+
+
+def print_size(k, obj, identation=0):
+    size = len(dumps(obj))
+    if size > 1500:
+        logger.critical(
+            "{} {} - Size: {}, Type: {}", "\t" * identation, k, size, type(obj)
+        )
+    else:
+        logger.debug(
+            "{} {} - Size: {}, Type: {}", "\t" * identation, k, size, type(obj)
+        )
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            print_size(k, v, identation + 1)

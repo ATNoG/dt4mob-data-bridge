@@ -5,7 +5,6 @@ from pydantic import BaseModel
 
 from models.waze import WazeRequest
 from storage.session import SessionSingleton
-from settings import settings
 
 
 class _Limits(BaseModel):

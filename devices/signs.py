@@ -1,4 +1,3 @@
-from loguru import logger
 
 from devices.ditto import Device
 from interfaces.hono import HonoDevice
