@@ -6,8 +6,10 @@ repos:
       # Run the linter with auto-fix
       - id: ruff-check
         args: [--fix]
+        stages: [pre-push]
       # Run the formatter
       - id: ruff-format
+        stages: [pre-commit]
 
   # Local hooks run with uv
   - repo: local
@@ -20,3 +22,4 @@ repos:
         types: [python]
         pass_filenames: false
         require_serial: true
+        stages: [pre-push]
