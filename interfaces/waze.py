@@ -32,7 +32,7 @@ def _get_limits(radius: float, lat: float, lon: float) -> _Limits:
     )
 
 
-async def get_traffic_data(lat: float, lon: float, radius: float):
+async def get_traffic_data(lat: float, lon: float, radius: float) -> WazeRequest:
     session = SessionSingleton.get_session()
     lim = _get_limits(radius, lat, lon)
     url = f"https://www.waze.com/live-map/api/georss?top={lim.top}&bottom={lim.bottom}&left={lim.left}&right={lim.right}&env=row&types=traffic,alerts"

@@ -13,7 +13,7 @@ class SessionSingleton:
         return cls.client
 
     @classmethod
-    async def close_session(cls):
+    async def close_session(cls) -> None:
         if cls.client:
             await cls.client.close()
             cls.client = None

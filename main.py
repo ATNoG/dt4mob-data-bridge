@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
@@ -16,7 +17,7 @@ from storage.session import SessionSingleton
 from storage.station import StationSingleton
 
 
-async def batch_cooldown(i: int):
+async def batch_cooldown(i: int) -> int:
     if i % 100 == 0:
         logger.info(
             "{} requests sent in total, cooling down. Will send another 100 requests in 5 seconds",
@@ -77,7 +78,6 @@ async def update_signs() -> None:
     logger.debug("Successfully got all the signs")
     i = 1
     for sign in signs:
-
         logger.debug("Updating sign {}", f"{sign.type}-{sign.objectID}")
         await sign_device.modify(None, sign)
         i = await batch_cooldown(i)
@@ -96,7 +96,6 @@ async def update_barriers() -> None:
     logger.debug("Successfully got all the barriers")
     i = 1
     for barrier in barriers:
-
         logger.debug("Updating barrier {}", barrier.objectID)
         await barrier_device.modify(None, barrier)
         await asyncio.sleep(0.01)
@@ -116,7 +115,6 @@ async def update_equivia() -> None:
     logger.debug("Successfully got all the road features")
     i = 1
     for thing in equivia:
-
         logger.debug("Updating road-feature {}", f"{thing.type}-{thing.object_id}")
         await equivia_device.modify(None, thing)
         i = await batch_cooldown(i)
@@ -125,7 +123,7 @@ async def update_equivia() -> None:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("STARTUP: Creating Hono devices")
 
@@ -155,14 +153,12 @@ app = FastAPI(lifespan=lifespan)
 
 
 @app.get("/meteorology")
-async def get_closest_stations(lat: float, lon: float):
+async def get_closest_stations(lat: float, lon: float) -> list[str]:
     device = DevicesSingleton.get_device(DeviceType.METEO)
     if device is None:
         raise HTTPException(
             status_code=503, detail="No stations are currently available"
         )
 
-    return [
-        f"{device.id}:{station.id}"
-        for station in StationSingleton.get_closest_stations(lat, lon)
-    ]
+    stations = await StationSingleton.get_closest_stations(lat, lon)
+    return [f"{device.id}:{station.id}" for station in stations]

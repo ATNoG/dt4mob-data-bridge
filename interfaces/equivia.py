@@ -1,8 +1,7 @@
 import os
-from loguru import logger
-
 import json
-from typing import List
+from typing import Any, Generator, List
+from loguru import logger
 from pyproj.transformer import Transformer
 
 from models.geo import Point, PolyLine
@@ -23,7 +22,7 @@ from models.equivia import (
 transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 
 
-def read_files(dir: str):
+def read_files(dir: str) -> Generator[str, None, None]:
     logger.info("Reading directory {}", dir)
     files = os.listdir(dir)
 
@@ -52,7 +51,7 @@ def convert_coordinates(coords: list[int]) -> Point:
         raise e
 
 
-def generate_things(js: dict):
+def generate_things(js: dict[str, Any]) -> Generator[EquiviaThings, None, None]:
     equivia_type = js.get("name")
     for feature in js.get("features", []):
         thing = feature.get("properties", {})
@@ -69,6 +68,7 @@ def generate_things(js: dict):
                 [convert_coordinates(x) for x in coords.get("coordinates")[0][0]]
             )
 
+        segments: list[Point] | list[PolyLine]
         if isinstance(thing["location"], Point):
             segments = [thing["location"]]
         else:

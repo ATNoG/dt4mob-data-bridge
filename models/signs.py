@@ -13,7 +13,7 @@ class Estado(str, Enum):
     RETIRADO = "2"
     SUBSTITUIDO = "3"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.COLOCADO:
                 return "Colocado"
@@ -21,6 +21,8 @@ class Estado(str, Enum):
                 return "Retirado"
             case self.SUBSTITUIDO:
                 return "Substituído"
+            case _:
+                return ""
 
 
 class Sentidoleitura(str, Enum):
@@ -31,12 +33,14 @@ class Sentidoleitura(str, Enum):
     CRESCENTE = "1"
     DECRESCENTE = "2"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.CRESCENTE:
                 return "Crescente"
             case self.DECRESCENTE:
                 return "Decrescente"
+            case _:
+                return ""
 
 
 class TipoAmbRod(str, Enum):
@@ -51,7 +55,7 @@ class TipoAmbRod(str, Enum):
     LIG_ESQ_ENTRADA_NA_PV = "5"
     LIG_ESQ_SAIDA_DA_PV = "6"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.PLENA_VIA_PV:
                 return "Plena via (PV)"
@@ -65,6 +69,8 @@ class TipoAmbRod(str, Enum):
                 return "Lig. à esq. - Entrada na PV"
             case self.LIG_ESQ_SAIDA_DA_PV:
                 return "Lig. à esq. - Saída da PV"
+            case _:
+                return ""
 
 
 class Posicao(str, Enum):
@@ -79,7 +85,7 @@ class Posicao(str, Enum):
     LOCAL_DE_DIVERGENCIA = "6"
     BERMA_DIREITA = "1"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.BERMA_ESQUERDA:
                 return "Berma esquerda"
@@ -93,6 +99,8 @@ class Posicao(str, Enum):
                 return "Local de divergência"
             case self.BERMA_DIREITA:
                 return "Berma direita"
+            case _:
+                return ""
 
 
 class Classeretroface(str, Enum):
@@ -104,7 +112,7 @@ class Classeretroface(str, Enum):
     RA2 = "2"
     RA3 = "3"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.RA1:
                 return "RA1"
@@ -112,6 +120,8 @@ class Classeretroface(str, Enum):
                 return "RA2"
             case self.RA3:
                 return "RA3"
+            case _:
+                return ""
 
 
 class Substrato(str, Enum):
@@ -127,7 +137,7 @@ class Substrato(str, Enum):
     PEDRA = "6"
     MADEIRA = "7"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.ALUMINIO:
                 return "Alumínio"
@@ -143,6 +153,8 @@ class Substrato(str, Enum):
                 return "Pedra"
             case self.MADEIRA:
                 return "Madeira"
+            case _:
+                return ""
 
 
 class Fabricantes(str, Enum):
@@ -173,7 +185,7 @@ class Fabricantes(str, Enum):
     SERLIX = "21"
     ROADSIGN = "22"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.BRICANTEL:
                 return "BRICANTEL"
@@ -219,6 +231,8 @@ class Fabricantes(str, Enum):
                 return "SERLIX"
             case self.ROADSIGN:
                 return "ROADSIGN"
+            case _:
+                return ""
 
 
 class Faced(str, Enum):
@@ -235,7 +249,7 @@ class Faced(str, Enum):
     SUDOESTE = "7"
     NOROESTE = "8"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.NORTE:
                 return "Norte"
@@ -253,6 +267,8 @@ class Faced(str, Enum):
                 return "Sudoeste"
             case self.NOROESTE:
                 return "Noroeste"
+            case _:
+                return ""
 
 
 class Motsubst(str, Enum):
@@ -268,7 +284,7 @@ class Motsubst(str, Enum):
     VANDALISMO = "6"
     NAO_APLICAVEL = "7"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.ACIDENTE:
                 return "Acidente"
@@ -284,6 +300,8 @@ class Motsubst(str, Enum):
                 return "Vandalismo"
             case self.NAO_APLICAVEL:
                 return "Não Aplicável"
+            case _:
+                return ""
 
 
 class Gestao(str, Enum):
@@ -296,7 +314,7 @@ class Gestao(str, Enum):
     CONCESSAO = "2"
     MUNICIPIO = "3"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.IP:
                 return "IP"
@@ -306,6 +324,8 @@ class Gestao(str, Enum):
                 return "Concessao"
             case self.MUNICIPIO:
                 return "Municipio"
+            case _:
+                return ""
 
 
 class Ec(str, Enum):
@@ -317,7 +337,7 @@ class Ec(str, Enum):
     EC2 = "2"
     EC3 = "3"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.EC1:
                 return "EC1"
@@ -325,6 +345,8 @@ class Ec(str, Enum):
                 return "EC2"
             case self.EC3:
                 return "EC3"
+            case _:
+                return ""
 
 
 class Forma(str, Enum):
@@ -338,7 +360,7 @@ class Forma(str, Enum):
     SETA = "7"
     OUTRA = "8"
 
-    def __str__(self):
+    def __str__(self) -> str:
         match self:
             case self.TRIANGULO_EQUILATERO_0:
                 return "Triângulo equilátero"
@@ -358,6 +380,8 @@ class Forma(str, Enum):
                 return "Seta"
             case self.OUTRA:
                 return "Outra"
+            case _:
+                return ""
 
 
 class Sign(BaseModel):

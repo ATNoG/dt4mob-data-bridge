@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 
 from interfaces.hono import HonoDevice
@@ -23,8 +23,8 @@ class Device(ABC):
     def modify_message(
         self,
         thingName: str,
-        attributes=None,
-        features: Optional[Dict[str, Feature]] = {},
+        attributes: "Optional[dict[str, object]]" = None,
+        features: Optional[Dict[str, Feature]] = None,
     ) -> DittoProtocolEnvelope:
         message_topic = Topic(
             namespace=self._hono.id,
@@ -46,5 +46,5 @@ class Device(ABC):
         return env
 
     @abstractmethod
-    async def modify(self, device, data):
+    async def modify(self, device: Any, data: Any) -> None:
         pass

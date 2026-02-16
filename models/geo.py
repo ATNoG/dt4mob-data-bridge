@@ -7,7 +7,7 @@ class Point(BaseModel, frozen=True):
     longitude: float = Field(alias="x")
     latitude: float = Field(alias="y")
 
-    def to_tuple(self):
+    def to_tuple(self) -> tuple[float, float]:
         return self.longitude, self.latitude
 
 

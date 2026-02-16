@@ -1,7 +1,7 @@
 import json
+from typing import Any, Generator, List
 from loguru import logger
 from pyproj.transformer import Transformer
-from typing import List
 from models.geo import Point
 from models.barriers import Barrier
 from settings import settings
@@ -9,7 +9,7 @@ from settings import settings
 transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 
 
-def generate_barrier(js: dict):
+def generate_barrier(js: dict[str, Any]) -> Generator[Barrier, None, None]:
     for feature in js.get("features", []):
         barrier = feature.get("properties", {})
         line: List[List[int]] = feature.get("geometry", []).get("coordinates", [])[0]

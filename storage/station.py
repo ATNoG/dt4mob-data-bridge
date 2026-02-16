@@ -11,7 +11,7 @@ class StationSingleton:
     _lock: asyncio.Lock = asyncio.Lock()
 
     @classmethod
-    async def set_stations(cls, stations: List[Station]):
+    async def set_stations(cls, stations: List[Station]) -> None:
         async with cls._lock:
             cls._stations = set(stations)
 

@@ -104,14 +104,17 @@ class Topic(BaseModel):
         return self
 
     @model_serializer
-    def ser_model(self):
+    def ser_model(self) -> str:
         if self.channel:
             res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.channel.value}/{self.criterion.value}"
         else:
             res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.criterion.value}"
 
         if self.action:
-            res += f"/{self.action.value}"
+            action_value = (
+                self.action.value if isinstance(self.action, Enum) else str(self.action)
+            )
+            res += f"/{action_value}"
 
         return res
 

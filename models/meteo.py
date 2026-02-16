@@ -17,6 +17,59 @@ class WindDirection(int, Enum):
     UNKNOWN = 0
 
 
+class AwarenessLevel(str, Enum):
+    GREEN = "green"
+    YELLOW = "yellow"
+    ORANGE = "orange"
+    RED = "red"
+
+
+class AwarenessType(str, Enum):
+    SEA_AGITATION = "Agitação Marítima"
+    SNOW = "Neve"
+    FOG = "Nevoeiro"
+    RAIN = "Precipitação"
+    COLD = "Tempo Frio"
+    HOT = "Tempo Quente"
+    THUNDER = "Trovoada"
+    WIND = "Vento"
+
+
+class WarningArea(str, Enum):
+    CENTRAL_AZORES = "ACE"
+    WEST_AZORES = "AOC"
+    EAST_AZORES = "AOR"
+    AVEIRO = "AVR"
+    BRAGANCA = "BGC"
+    BEJA = "BJA"
+    BRAGA = "BRG"
+    CASTELO_BRANCO = "CBO"
+    COIMBRA = "CBR"
+    EVORA = "EVR"
+    FARO = "FAR"
+    GUARDA = "GDA"
+    LEIRIA = "LRA"
+    LISBOA = "LSB"
+    MADEIRA = "MCS"
+    PORTO_SANTO = "MPS"
+    PORTALEGRE = "PTG"
+    PORTO = "PTO"
+    SETUBAL = "STB"
+    SANTAREM = "STM"
+    VIANA_DO_CASTELO = "VCT"
+    VISEU = "VIS"
+    VILA_REAL = "VRL"
+
+
+class Warning(BaseModel):
+    text: str
+    awareness_type: AwarenessType = Field(alias="awarenessTypeName")
+    awareness_level: AwarenessLevel = Field(alias="awarenessLevelID")
+    warning_area: WarningArea = Field(alias="idAreaAviso")
+    start_time: datetime = Field(alias="startTime")
+    end_time: datetime = Field(alias="endTime")
+
+
 class Measurement(BaseModel):
     wind_intensity: float = Field(alias="intensidadeVentoKM")
     temperature: float = Field(alias="temperatura")
@@ -28,7 +81,7 @@ class Measurement(BaseModel):
     time: datetime
 
     @field_serializer("time")
-    def serialize_time(self, time: datetime):
+    def serialize_time(self, time: datetime) -> str:
         return time.isoformat()
 
 
@@ -37,7 +90,7 @@ class Station(BaseModel, frozen=True):
     location: Point
     location_name: str
 
-    def create_message(self, measurement: Measurement) -> dict:
+    def create_message(self, measurement: Measurement) -> dict[str, object]:
         return {
             "attributes": self.model_dump(),
             "features": {"metereology": {"properties": measurement.model_dump()}},

@@ -20,13 +20,16 @@ class DevicesSingleton:
 
     @classmethod
     def add_device(cls, device: DeviceSettings) -> HonoDevice:
-        item = None
+        item: Device
 
+        # Pass the appropriate authentication method based on what's configured
+        # The validator ensures exactly one of passwd or cert_path is set
         hono_conn = HonoDevice(
             SessionSingleton.get_session(),
             device.type.value,
-            device.passwd,
             device.policy_id,
+            device.passwd,
+            device.cert_path,
         )
 
         match device.type:

@@ -51,11 +51,11 @@ class Alert(BaseModel):
     pubMillis: datetime
 
     @field_serializer("pubMillis")
-    def serialize_timestamp(self, dt: datetime):
+    def serialize_timestamp(self, dt: datetime) -> int:
         return int(dt.timestamp() * 100)
 
     @field_serializer("subtype")
-    def serialize_subtype(self, subtype: AlertSubtype):
+    def serialize_subtype(self, subtype: AlertSubtype) -> str:
         return str(subtype)
 
 
@@ -72,7 +72,7 @@ class Jam(BaseModel):
     pubMillis: datetime
 
     @field_serializer("pubMillis")
-    def serialize_timestamp(self, dt: datetime):
+    def serialize_timestamp(self, dt: datetime) -> int:
         return int(dt.timestamp() * 100)
 
 
@@ -83,5 +83,5 @@ class WazeRequest(BaseModel):
     jams: List[Jam] = []
 
     @field_serializer("startTimeMillis", "endTimeMillis")
-    def serialize_timestamp(self, dt: datetime):
+    def serialize_timestamp(self, dt: datetime) -> int:
         return int(dt.timestamp() * 100)

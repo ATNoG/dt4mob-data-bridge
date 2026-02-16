@@ -1,6 +1,6 @@
 from enum import Enum
-from typing import List
-from pydantic import AnyHttpUrl, BaseModel
+from typing import List, Optional, Self
+from pydantic import AnyHttpUrl, BaseModel, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -28,12 +28,22 @@ class HonoSettings(BaseModel):
     device_registry: AnyHttpUrl = AnyHttpUrl("http://localhost:28443")
     http_adapter: AnyHttpUrl = AnyHttpUrl("http://localhost:8443")
     tenant_id: str = "DEFAULT_TENANT"
+    server_cert_path: Optional[str] = None
 
 
 class DeviceSettings(BaseModel):
     type: DeviceType = DeviceType.TRAFFIC
     policy_id: str = ""
-    passwd: str = "secret"
+    passwd: Optional[str] = None
+    cert_path: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_credentials(self) -> Self:
+        if (self.passwd is not None) + (self.cert_path is not None) != 1:
+            raise ValueError(
+                "A device must have one and only one authentication method"
+            )
+        return self
 
 
 class Toll(BaseModel):

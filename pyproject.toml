@@ -20,10 +20,12 @@ dev = [
     "ruff>=0.12.5",
     "ty>=0.0.1a16",
     "mypy>=1.17.0",
+    "pre-commit>=4.5.1",
 ]
 
 [tool.mypy]
 strict = true
+ignore_missing_imports = true
 
 [tool.ruff.lint]
 extend-select = ["T20"]

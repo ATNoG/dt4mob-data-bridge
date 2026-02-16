@@ -1,8 +1,8 @@
 import os
 import json
+from typing import Any, Generator, List
 from loguru import logger
 from pyproj.transformer import Transformer
-from typing import List
 from models.signs import Sign
 from models.geo import Point
 from settings import settings
@@ -10,7 +10,7 @@ from settings import settings
 transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 
 
-def read_files(dir: str):
+def read_files(dir: str) -> Generator[str, None, None]:
     logger.info("Reading directory {}", dir)
     files = os.listdir(dir)
 
@@ -20,7 +20,7 @@ def read_files(dir: str):
             yield f.read()
 
 
-def generate_signs(js: dict):
+def generate_signs(js: dict[str, Any]) -> Generator[Sign, None, None]:
     sign_type = js.get("name")
     for feature in js.get("features", []):
         sign = feature.get("properties", {})
