@@ -15,13 +15,8 @@ class TrafficDevice(Device):
     async def modify(self, device: Any, data: Any) -> None:
         assert isinstance(device, Toll)
         assert isinstance(data, WazeRequest)
-        stations = await StationSingleton.get_closest_stations(
-            device.latitude, device.longitude
-        )
         attributes = {
-            "meteo_stations": [f"{self.id}:{station.id}" for station in stations],
-            "latitude": device.latitude,
-            "longitude": device.longitude,
+            "location": {"latitude": device.latitude, "longitude": device.longitude},
             "name": device.name,
         }
 

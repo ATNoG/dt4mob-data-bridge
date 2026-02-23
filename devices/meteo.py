@@ -11,5 +11,4 @@ class MeteoDevice(Device):
     async def modify(self, device: Station, data: Measurement) -> None:
         features = {"meteorology": Feature(properties=data.model_dump())}
         message = self.modify_message(str(device.id), device.model_dump(), features)
-
         await self._hono.send_telemetry(message)

@@ -6,12 +6,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi_utils.tasks import repeat_every
 from loguru import logger
 
-from interfaces.equivia import get_equivia
-from interfaces.ipma import get_meteorology_measurements
-from interfaces.waze import get_traffic_data
-from interfaces.signs import get_signs
 from interfaces.barriers import get_barrier
-from settings import settings, DeviceType
+from interfaces.equivia import get_equivia
+from interfaces.ipma import get_meteorology_measurements, get_meteorology_warnings
+from interfaces.signs import get_signs
+from interfaces.waze import get_traffic_data
+from models.meteo import WarningArea
+from settings import DeviceType, settings
 from storage.device import DevicesSingleton
 from storage.session import SessionSingleton
 from storage.station import StationSingleton
@@ -28,14 +29,43 @@ async def batch_cooldown(i: int) -> int:
     return i + 1
 
 
-@repeat_every(seconds=settings.polling_interval)
+async def populate_warning_areas() -> None:
+    logger.debug("Populating the warning areas in the Station Singleton")
+    session = SessionSingleton.get_session()
+
+    req = await session.get("https://api.ipma.pt/open-data/distrits-islands.json")
+    try:
+        req.raise_for_status()
+    except Exception as e:
+        logger.error(
+            "An error has occured while getting the warning areas from IPMA API, {}", e
+        )
+        return
+
+    data = await req.json()
+    areas = [WarningArea.model_validate(area) for area in data["data"]]
+
+    logger.debug("Successfully acquired the warning areas {}", areas)
+    await StationSingleton.set_warning_areas(areas)
+    logger.debug("Successfully stored the warning areas")
+
+
+async def populate_stations() -> None:
+    logger.info("Updating metereology stations' information")
+    measurements = await get_meteorology_measurements()
+    logger.debug("Got measurements from IPMA")
+
+    stations = [station for station, _ in measurements]
+    await StationSingleton.set_stations(stations)
+
+
 async def update_meteo() -> None:
     logger.info("Updating metereology stations' information")
     measurements = await get_meteorology_measurements()
     logger.debug("Got measurements from IPMA")
 
-    data = [station for station, _ in measurements]
-    await StationSingleton.set_stations(data)
+    stations = [station for station, _ in measurements]
+    await StationSingleton.set_stations(stations)
 
     logger.debug("Posting received measurements")
     meteo = DevicesSingleton.get_device(DeviceType.METEO)
@@ -44,8 +74,30 @@ async def update_meteo() -> None:
         return
 
     for station, measurement in measurements:
-        logger.debug("Updating information for {}", station.id)
+        logger.debug("Updating measurements for {}", station.id)
         await meteo.modify(station, measurement)
+
+
+@repeat_every(seconds=settings.polling_interval)
+async def loop_meteo():
+    await update_meteo()
+
+
+async def update_meteo_warnings() -> None:
+    warnings = await get_meteorology_warnings()
+    meteo = DevicesSingleton.get_device(DeviceType.METEO)
+    if meteo is None:
+        logger.error("Meteo device not found. Cannot update measurements.")
+        return
+
+    for station, warning in warnings.items():
+        dump = [warn.model_dump() for warn in warning]
+        logger.debug("Updating information for {} - {}", station.id, dump)
+        message = meteo.modify_message(str(station.id))
+        message.path = "/features/events"
+        message.value = {"properties": {"warnings": dump}}  # ty:ignore[invalid-assignment]
+
+        await meteo._hono.send_telemetry(message)
 
 
 @repeat_every(seconds=settings.polling_interval)
@@ -124,7 +176,6 @@ async def update_equivia() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-
     logger.info("STARTUP: Creating Hono devices")
 
     logger.debug("Existing devices: {}", settings.devices)
@@ -136,7 +187,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     logger.info("Hono devices created successfully")
 
-    asyncio.create_task(update_meteo())
+    await populate_warning_areas()
+    await populate_stations()
+    await update_meteo()
+    await update_meteo_warnings()
+
+    # asyncio.create_task(loop_meteo())
     # asyncio.create_task(update_traffic())
     # asyncio.create_task(update_signs())
     # asyncio.create_task(update_barriers())

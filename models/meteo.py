@@ -2,6 +2,7 @@ from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_serializer
+
 from models.geo import Point
 
 
@@ -18,6 +19,7 @@ class WindDirection(int, Enum):
 
 
 class AwarenessLevel(str, Enum):
+    GRAY = "gray"
     GREEN = "green"
     YELLOW = "yellow"
     ORANGE = "orange"
@@ -35,39 +37,27 @@ class AwarenessType(str, Enum):
     WIND = "Vento"
 
 
-class WarningArea(str, Enum):
-    CENTRAL_AZORES = "ACE"
-    WEST_AZORES = "AOC"
-    EAST_AZORES = "AOR"
-    AVEIRO = "AVR"
-    BRAGANCA = "BGC"
-    BEJA = "BJA"
-    BRAGA = "BRG"
-    CASTELO_BRANCO = "CBO"
-    COIMBRA = "CBR"
-    EVORA = "EVR"
-    FARO = "FAR"
-    GUARDA = "GDA"
-    LEIRIA = "LRA"
-    LISBOA = "LSB"
-    MADEIRA = "MCS"
-    PORTO_SANTO = "MPS"
-    PORTALEGRE = "PTG"
-    PORTO = "PTO"
-    SETUBAL = "STB"
-    SANTAREM = "STM"
-    VIANA_DO_CASTELO = "VCT"
-    VISEU = "VIS"
-    VILA_REAL = "VRL"
+class WarningArea(BaseModel):
+    region_id: int = Field(alias="idRegiao")
+    warning_area: str = Field(alias="idAreaAviso")
+    municipality_id: int = Field(alias="idConcelho")
+    district_id: int = Field(alias="idDistrito")
+    latitude: float = Field(alias="latitude")
+    longitude: float = Field(alias="longitude")
+    region_name: str = Field(alias="local")
 
 
 class Warning(BaseModel):
     text: str
     awareness_type: AwarenessType = Field(alias="awarenessTypeName")
     awareness_level: AwarenessLevel = Field(alias="awarenessLevelID")
-    warning_area: WarningArea = Field(alias="idAreaAviso")
+    warning_area: str = Field(alias="idAreaAviso")
     start_time: datetime = Field(alias="startTime")
     end_time: datetime = Field(alias="endTime")
+
+    @field_serializer("start_time", "end_time")
+    def serialize_timestamp(self, dt: datetime) -> int:
+        return int(dt.timestamp() * 100)
 
 
 class Measurement(BaseModel):

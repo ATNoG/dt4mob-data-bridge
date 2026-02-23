@@ -5,10 +5,6 @@ from models.geo import Point
 
 
 class Estado(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     COLOCADO = "1"
     RETIRADO = "2"
     SUBSTITUIDO = "3"
@@ -26,10 +22,6 @@ class Estado(str, Enum):
 
 
 class Sentidoleitura(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     CRESCENTE = "1"
     DECRESCENTE = "2"
 
@@ -44,10 +36,6 @@ class Sentidoleitura(str, Enum):
 
 
 class TipoAmbRod(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     PLENA_VIA_PV = "1"
     RAMO_DE_NO_DE_LIGACAO = "2"
     LIG_DIR_ENTRADA_NA_PV = "3"
@@ -74,10 +62,6 @@ class TipoAmbRod(str, Enum):
 
 
 class Posicao(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     BERMA_ESQUERDA = "2"
     SOBRE_VIA_RAMO_LIGACAO = "3"
     ILHEU_SEPARADOR_CENTRAL = "4"
@@ -104,10 +88,6 @@ class Posicao(str, Enum):
 
 
 class Classeretroface(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     RA1 = "1"
     RA2 = "2"
     RA3 = "3"
@@ -125,10 +105,6 @@ class Classeretroface(str, Enum):
 
 
 class Substrato(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     ALUMINIO = "1"
     FERRO_GALVANIZADO = "2"
     FIBRA_DE_VIDRO = "3"
@@ -158,10 +134,6 @@ class Substrato(str, Enum):
 
 
 class Fabricantes(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     BRICANTEL = "1"
     FL_GASPAR = "2"
     INTERVEGA = "3"
@@ -236,10 +208,6 @@ class Fabricantes(str, Enum):
 
 
 class Faced(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     NORTE = "1"
     SUL = "2"
     ESTE = "3"
@@ -272,10 +240,6 @@ class Faced(str, Enum):
 
 
 class Motsubst(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     ACIDENTE = "1"
     DESGASTE = "2"
     FOGO = "3"
@@ -305,10 +269,6 @@ class Motsubst(str, Enum):
 
 
 class Gestao(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     IP = "0"
     SUBCONCESSAO = "1"
     CONCESSAO = "2"
@@ -329,10 +289,6 @@ class Gestao(str, Enum):
 
 
 class Ec(str, Enum):
-    """
-    IPGIS_SINAL_2018
-    """
-
     EC1 = "1"
     EC2 = "2"
     EC3 = "3"

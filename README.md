@@ -1,121 +1,209 @@
-# IoT Weather and Traffic Data Bridge
+# Data Bridge
 
-This project is an asynchronous data bridge that collects meteorological data from **IPMA** (the Portuguese Institute for Sea and Atmosphere) and traffic data from **Waze**. It then forwards this information to an IoT platform through **Eclipse Hono**, formatted for **Eclipse Ditto**.
+Data Bridge is a FastAPI-based data integration service that continuously polls
+multiple road and meteorological data sources (IPMA, Waze, and local GeoJSON
+files) and forwards the normalized data to an Eclipse Hono IoT device registry
+using the Eclipse Ditto protocol over HTTP.
 
-The application runs as a **FastAPI** service with background tasks that periodically poll the data sources.
+## Overview
 
-## Core Functionality
+The service acts as a bridge between external data sources and a Hono/Ditto IoT
+platform. On startup, it auto-registers the configured virtual devices in
+Hono's Device Registry and immediately executes a first data sync cycle. Five
+device types are managed: meteo (meteorological stations from IPMA), traffic
+(Waze-sourced road incidents), sign (road sign inventory from GeoJSON), barrier
+(road barrier inventory from GeoJSON), and equivia (road infrastructure
+features from GeoJSON).
 
-  * **Periodic Data Fetching**: Automatically fetches updated weather and traffic data at a configurable interval.
-  * **External API Integration**:
-      * Pulls meteorological observations from IPMA's public GeoJSON feed.
-      * Retrieves traffic jams and alerts from the Waze Live Map API for predefined locations.
-  * **IoT Platform Integration**:
-      * Registers and authenticates devices with an Eclipse Hono instance.
-      * Sends telemetry data, formatted as a **Ditto Protocol Envelope** create/modify command, allowing for Digital Twin creation and update.
+## Prerequisites
 
------
+Python ≥ 3.13.5 (required by the project manifest).
 
-## How It Works
+A running Eclipse Hono instance accessible over HTTP, with a working Device Registry endpoint and an HTTP Adapter endpoint.
 
-The application operates in two main phases: startup and periodic updates.
+Local GeoJSON data files for signs, barriers, and Equivia road features, organized in directories as described below.
 
-### 1\. Application Startup
+Network access to the IPMA Open API (api.ipma.pt) for meteorological data.
 
-1.  **Load Configuration**: On startup, the application reads its configuration from `config.toml` using the `pydantic-settings` library (`settings.py`). This includes Hono credentials, polling intervals, and lists of devices and traffic sensor locations (`tolls`).
-2.  **Initialize Singletons**: It sets up singleton instances for managing the `aiohttp` client session, a list of known weather stations, and the device clients (`storage/__init__.py`).
-3.  **Create Hono Devices**: It iterates through the devices listed in `config.toml`. For each one, it creates a `HonoDevice` instance (`interfaces/hono.py`).
-4.  **Register with Hono**: The `create_hono_device()` method is called for each device. This sends a `POST` request to the Hono device registry and sets up hashed-password credentials. If a device already exists (HTTP 409 Conflict), it skips creation.
-5.  **Instantiate Device Logic**: Based on the device `type` (`meteo` or `traffic`), it wraps the `HonoDevice` connection in a `MeteoDevice` or `TrafficDevice` class and stores it in the `DevicesSingleton`.
-6.  **Initial Data Fetch**: It runs the `update_meteo` and `update_traffic` tasks, starting their periodic execution.
+Network access to the Waze CCP Traffic Data API for traffic and incident data.
 
-### 2\. Periodic Updates
+## Installation
 
-The application runs two background tasks concurrently, controlled by `@repeat_every` in `main.py`.
+Clone or copy the project source to your machine. The project uses
+pyproject.toml for dependency management, so you can install it with any PEP
+517-compliant tool. Using uv (recommended) or pip:
 
-#### Meteorology Data Flow (`update_meteo`)
+```bash
+# Using uv (recommended)
+uv sync
 
-1.  **Fetch Data**: The task calls `get_measurements()` from `interfaces/ipma.py` , which makes an HTTP request to the IPMA GeoJSON endpoint.
-2.  **Filter and Parse**: It parses the response, keeping only the most recent measurements and modeling the data into `Station` and `Measurement` Pydantic objects.
-3.  **Update Station Cache**: The list of active weather stations is updated in the `StationSingleton`, keeping it available for querying by the `\meteorology` endpoint
-4.  **Send Telemetry**: The task retrieves the `MeteoDevice`  and iterates through each station and its corresponding measurement.
-5.  **Format for Ditto**: For each station, `meteo.modify()` is called. This formats the data into a Ditto Protocol message. The message follows the [create/modify command](https://eclipse.dev/ditto/protocol-specification-things-create-or-modify.html), meaning that if the Digital Twin already exists in Ditto, it will just be updated, but if it is non-existing, then it will be created.
-6.  **Transmit via Hono**: The formatted message is sent to the Hono HTTP adapter's telemetry endpoint. Ditto will then consume this message from the connection that it has with the Hono instance
+# Using pip with a virtual environment
+python -m venv .venv
+source .venv/bin/activate
+pip install .
+```
 
-#### Traffic Data Flow (`update_traffic`)
+For development, install the dev dependency group as well, which includes ruff (linter), ty (type checker), and pre-commit hooks:
 
-1.  **Iterate Sensor Points**: The task loops through the list of traffic sensor points (`tolls`) defined in `config.toml`.
-2.  **Fetch Data**: For each sensor point's latitude and longitude, it calls `get_traffic_data()` from `interfaces/waze.py`. This function calculates a rectangular bounding box around the point  and queries the Waze API.
-3.  **Process in Parallel**: These API calls are run concurrently using `asyncio.gather()`.
-4.  **Send Telemetry**: The task retrieves the `TrafficDevice` and iterates through each toll and its corresponding Waze data.
-5.  **Format for Ditto**: For each toll, `traffic.modify()` is called.
-      * It finds the 3 closest weather stations using `StationSingleton.get_closest_stations()` and adds their IDs to the Ditto Thing's `attributes`.
-      * It includes the toll's location and name as attributes.
-      * It places the Waze alert and jam data into the `properties` of a feature named `traffic`.
-6.  **Transmit via Hono**: The formatted message is sent to the Hono HTTP adapter's telemetry endpoint. Ditto will then consume this message from the connection that it has with the Hono instance
 
------
+```bash
+uv sync --group dev
+pre-commit install
+```
 
-## Configuration (`config.toml`)
+## Configuration
 
-The application is configured via the `config.toml` file.
+All configuration is loaded from config.toml, placed in the working directory
+from which the service is launched. Environment variables can also override any
+setting using double-underscore (__) as a nested delimiter (e.g.,
+HONO__TENANT_ID=my-tenant). Environment variables take precedence over the TOML
+file.
 
-  * **`env`**: `dev` or `prod`. In `prod` mode, SSL verification is enabled for Hono requests.
-  * **`polling_interval`**: The time in seconds between each data fetch cycle.
-  * **`[hono]`**:
-      * `device_registry`: The base URL for the Hono device registry API.
-      * `http_adapter`: The URL for the Hono HTTP telemetry adapter.
-      * `tenant_id`: The Hono tenant ID to use for all devices.
-  * **`[[devices]]`**: A list of logical devices to register with Hono.
-      * `type`: Must be `"meteo"` or `"traffic"`.
-      * `policy_id`: The Ditto Policy ID to associate with the device's twin.
-      * `passwd`: The password for the device.
-  * **`[[tolls]]`**: A list of traffic sensor locations. Each entry defines a point for which traffic data will be fetched.
-      * `name`: A unique name for the sensor point.
-      * `road`, `latitude`, `longitude`: Location information.
-      * `area_radius`: The radius in meters around each sensor point to query the Waze API.
+### Top-level keys
 
------
+| Key              | Type              | Default | Description                                                                          |
+| ---------------- | ----------------- | ------- | -----------------------------------------------------------------------------------  |
+| env              | "prod" or "dev"   | "prod"  | Runtime environment. In dev, SSL verification is disabled for Hono requests. hono.py |
+| polling_interval | integer (seconds) | 3600    | How often the service polls data sources in its background loops. settings.py        |
 
-## Extending the Codebase
 
-### How to Add a New Data Source (e.g., Air Quality)
+### `[Hono]` section
 
-To add a new data source, you'll need to create a new interface, a new device class, and update the main application logic.
+This section configures the connection to your Eclipse Hono instance.
 
-1.  **Define Data Models (`models/`)**:
+| Key              | Default                | Description                                                              |
+| ---------------- | ---------------------- | ------------------------------------------------------------------------ |
+| device_registry  | http://localhost:28443 | Base URL of the Hono Device Registry REST API.                           |
+| http_adapter     | http://localhost:8443  | Base URL of the Hono HTTP Adapter for telemetry publishing.              |
+| tenant_id        | "DEFAULT_TENANT"       | The Hono tenant identifier under which devices are registered.           |
+| server_cert_path | null                   | Optional path to the Hono server's CA certificate for mTLS verification. |
 
-      * Create a `models/air_quality.py` file.
-      * Define Pydantic models for the data you'll be fetching (e.g., `AirQualityDevice`, `AirQualityReading`).
 
-2.  **Create an API Interface (`interfaces/`)**:
+### `[[devices]]` array
 
-      * Create an `interfaces/air_quality.py` file.
-      * Write an `async` function (e.g., `get_air_quality_data()`) that uses the `SessionSingleton` to fetch data from the new API endpoint and returns your Pydantic models.
+Each entry in the [[devices]] array declares one logical IoT device that the
+service registers in Hono and uses to publish telemetry. Exactly one
+authentication method must be specified per device, either passwd
+(password-based) or cert_path (client certificate), never both.
 
-3.  **Create a Device Class (`devices/`)**:
+| Key       | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| type      | Device type: one of traffic, meteo, sign, barrier, or equivia.                                  |
+| policy_id | The Ditto policy ID to associate with the device upon creation.                                 |
+| passwd    | Plaintext password. The service hashes it using SHA-512 before registering it in Hono. hono.py  |
+| cert_path | Path to a PEM client certificate file for certificate-based authentication.                     |
 
-      * Create a `devices/air_quality.py` file.
-      * Define a new class `AirQualityDevice(Device)` that inherits from the base `Device` class in `devices/ditto.py`.
-      * Implement the `async def modify(self, device, data)` method. This method should:
-          * Define any `attributes` and `features` needed for the Ditto twin.
-          * Call `self.modify_message(device, data)` to construct the Ditto Protocol envelope.
-          * Call `await self._hono.send_telemetry(message)` to send the data.
+### `[[tolls]]` array
 
-4.  **Update Configuration (`settings.py` and `config.toml`)**:
+Each entry defines a geospatial sensor point used for Waze traffic queries. The
+service queries Waze for traffic events (jams, alerts, hazards) within a radius
+around each defined coordinate.
 
-      * In `settings.py`, add `"air_quality"` to the `DeviceType` enum.
-      * In `config.toml`, add a new device entry:
-        ```toml
-        [[devices]]
-        type = "air_quality"
-        policy_id = "<hono-policy-id>"
-        passwd = "<hono-device-password>"
-        ```
+| Key                  | Description                                                              |
+| -------------------- | ------------------------------------------------------------------------ |
+| name                 | A human-readable identifier for the sensor point.                        |
+| road                 | The road or highway name (informational).                                |
+| latitude / longitude | WGS-84 coordinates of the sensor point.                                  |
+| area_radius          | Radius in metres to query around the point (default: 1000). settings.py  |
 
-5.  **Update Main Application Logic (`main.py`)**:
+### `[signs]`, `[barriers]`, `[equivia]` sections
 
-      * Import your new device and interface.
-      * In the `DeviceSingleton`, add a new case to the `match` statement to instantiate your `AirQualityDevice`.
-      * Create a new periodic task function, `update_air_quality()`, decorated with `@repeat_every`. This function will call your data fetch function defined in the new interface and then call the `modify` method on your `AirQualityDevice` instance.
-      * Call your new task in the `lifespan` function after device creation: `await update_air_quality()`.
+| Key          | Description                                                               |
+| ------------ | ------------------------------------------------------------------------- |
+| signs.dir    | Path to a directory containing road sign GeoJSON files.                   |
+| barriers.dir | Path to a single GeoJSON file containing road barrier features.           |
+| equivia.dir  | Path to a directory containing Equivia road infrastructure GeoJSON files. |
+
+Equivia GeoJSON data must use the EPSG:3763 (PT-TM06) projected coordinate
+system; the service converts all coordinates to WGS-84 (EPSG:4326)
+automatically.
+
+### Full example `config.toml`
+
+```toml
+env = "dev"
+polling_interval = 900
+
+[hono]
+device_registry = "https://your-hono-host:31947"
+http_adapter   = "https://your-hono-host:30501"
+tenant_id      = "my-tenant"
+# server_cert_path = "/etc/ssl/hono-ca.pem"  # optional
+
+[[devices]]
+type      = "meteo"
+policy_id = "meteo:default"
+passwd    = "a-strong-password"
+
+[[devices]]
+type      = "traffic"
+policy_id = "traffic:default"
+passwd    = "a-strong-password"
+
+[[devices]]
+type      = "sign"
+policy_id = "signs:default"
+passwd    = "a-strong-password"
+
+[[devices]]
+type      = "barrier"
+policy_id = "signs:default"
+passwd    = "a-strong-password"
+
+[[devices]]
+type      = "equivia"
+policy_id = "signs:default"
+passwd    = "a-strong-password"
+
+[signs]
+dir = "data/Signs"
+
+[barriers]
+dir = "data/Barriers/Barreiras.geojson"
+
+[equivia]
+dir = "data/Equivia"
+
+[[tolls]]
+name      = "SensorPoint1"
+road      = "VCI"
+latitude  = 41.1453611
+longitude = -8.5811944
+```
+
+## Running the service
+
+The service is a standard FastAPI application. Run it with the Uvicorn ASGI server included in the `fastapi[standard]` installation:
+
+```sh
+# From the project root (where config.toml lives)
+uv fastapi run main.py
+```
+
+On startup, the lifespan handler will:
+
+1. Register all configured devices in Hono (skipping any that already).
+
+2. Fetch IPMA warning areas and populate the station cache.
+
+3. Execute an immediate full sync of meteorological measurements and warnings.
+
+## REST API
+
+The service exposes one HTTP endpoint after startup:
+
+```
+GET /meteorology?lat={latitude}&lon={longitude}
+```
+
+Returns a list of Ditto Thing IDs for the IPMA weather stations geographically
+closest to the provided coordinates. Returns HTTP 503 if no stations are loaded
+(e.g., if the meteo device is not configured).
+
+## Startup Behaviour & Batch Rate-Limiting
+
+When pushing large datasets (signs, barriers, Equivia), the service sends up to
+100 requests before pausing for 5 seconds to avoid overwhelming the Hono HTTP
+adapter. This cooldown is applied automatically and requires no configuration.
+For barrier updates an additional 10 ms sleep is inserted between individual
+requests.
