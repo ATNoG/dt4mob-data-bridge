@@ -1,4 +1,3 @@
-
 from devices.ditto import Device
 from interfaces.hono import HonoDevice
 from models.signs import Sign

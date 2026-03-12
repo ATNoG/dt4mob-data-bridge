@@ -4,7 +4,6 @@ from devices.ditto import Device
 from interfaces.hono import HonoDevice
 from models.ditto import Feature
 from models.waze import WazeRequest
-from storage.station import StationSingleton
 from settings import Toll
 
 

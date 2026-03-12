@@ -18,6 +18,10 @@ from storage.session import SessionSingleton
 from storage.station import StationSingleton
 
 
+def is_device_active(device_type: DeviceType) -> bool:
+    return any(device.type == device_type for device in settings.devices)
+
+
 async def batch_cooldown(i: int) -> int:
     if i % 100 == 0:
         logger.info(
@@ -189,14 +193,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     await populate_warning_areas()
     await populate_stations()
-    await update_meteo()
-    await update_meteo_warnings()
 
-    # asyncio.create_task(loop_meteo())
-    # asyncio.create_task(update_traffic())
-    # asyncio.create_task(update_signs())
-    # asyncio.create_task(update_barriers())
-    # asyncio.create_task(update_equivia())
+    if is_device_active(DeviceType.METEO):
+        await update_meteo()
+        await update_meteo_warnings()
+    #     asyncio.create_task(loop_meteo())
+    #
+    # if is_device_active(DeviceType.TRAFFIC):
+    #     asyncio.create_task(update_traffic())
+    # if is_device_active(DeviceType.SIGN):
+    #     asyncio.create_task(update_signs())
+    # if is_device_active(DeviceType.BARRIER):
+    #     asyncio.create_task(update_barriers())
+    # if is_device_active(DeviceType.EQUIVIA):
+    #     asyncio.create_task(update_equivia())
 
     yield  # Run the main application loop
 

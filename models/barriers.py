@@ -115,6 +115,8 @@ class Barrier(BaseModel):
     obra_de_arte: bool
     condicao_ativo: bool
     geometry: List[Point]
+    geotile_int: int
+    geotile_str: str
 
     @field_validator("drenagem_assoc", "obra_de_arte", "condicao_ativo", mode="before")
     @classmethod

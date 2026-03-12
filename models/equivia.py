@@ -79,6 +79,8 @@ class EquiviaBase(BaseModel):
     gestao: Optional[Gestao]
     condicao_ativo: Optional[bool]
     type: str
+    geotile_int: int
+    geotile_str: str
 
     @field_validator("condicao_ativo", mode="before")
     @classmethod

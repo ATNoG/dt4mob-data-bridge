@@ -363,3 +363,5 @@ class Sign(BaseModel):
     ec: Optional[Ec]
     pk: Optional[float]
     location: Point
+    geotile_int: int
+    geotile_str: str

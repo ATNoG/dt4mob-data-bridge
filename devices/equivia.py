@@ -3,7 +3,6 @@ from interfaces.hono import HonoDevice
 from models.equivia import EquiviaThings
 
 
-
 class EquiviaDevice(Device):
     def __init__(self, hono_dev: HonoDevice):
         super().__init__(hono_dev)

@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from models.geo import Point
 
@@ -59,6 +59,12 @@ class Warning(BaseModel):
     def serialize_timestamp(self, dt: datetime) -> int:
         return int(dt.timestamp() * 100)
 
+    @field_validator("start_time", "end_time", mode="before")
+    def parse_datetime(cls, value: str) -> datetime:
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%S").replace(
+            tzinfo=timezone.utc
+        )
+
 
 class Measurement(BaseModel):
     wind_intensity: float = Field(alias="intensidadeVentoKM")
@@ -79,9 +85,11 @@ class Station(BaseModel, frozen=True):
     id: int
     location: Point
     location_name: str
+    geotile_int: int
+    geotile_str: str
 
     def create_message(self, measurement: Measurement) -> dict[str, object]:
         return {
             "attributes": self.model_dump(),
-            "features": {"metereology": {"properties": measurement.model_dump()}},
+            "features": {"measurements": {"properties": measurement.model_dump()}},
         }

@@ -1,17 +1,16 @@
-from pydantic import ValidationError
-from storage.station import StationSingleton
 import json
 from datetime import datetime, timezone
-from typing import List, Tuple, Dict
+from typing import Dict, List, Tuple
 
 from aiohttp import ClientResponseError
 from loguru import logger
+from pydantic import ValidationError
 
-from storage.session import SessionSingleton
-from models.meteo import Measurement
-from models.meteo import Station
-from models.meteo import Warning
 from models.geo import Point
+from models.meteo import Measurement, Station, Warning
+from storage.session import SessionSingleton
+from storage.station import StationSingleton
+from utils.geo import get_quadkey_int, get_quadkey_str
 
 
 async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
@@ -58,6 +57,8 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
                     id=station_id,
                     location=point,
                     location_name=d["properties"]["localEstacao"],
+                    geohash_int=get_quadkey_int(point.latitude, point.longitude, 31),
+                    geohash_str=get_quadkey_str(point.latitude, point.longitude, 31),
                 ),
                 Measurement(**properties),
             )
@@ -91,12 +92,22 @@ async def get_meteorology_warnings() -> Dict[Station, List[Warning]]:
 
     data = await response.json()
     ret = {}
+    now = datetime.now(timezone.utc)
     try:
-        warnings: List[Warning] = [
-            Warning.model_validate(warning_data) for warning_data in data
+        warnings = [
+            Warning.model_validate(warning_data)
+            for warning_data in data
+            if warning_data["awarenessLevelID"] not in ("gray", "green")
         ]
-        logger.debug("The warnings are {}", warnings)
+
         for warning in warnings:
+            logger.debug(
+                "The warning's end time is {}. Now is {}", warning.end_time, now
+            )
+            if warning.end_time < now:
+                logger.debug("Skipping expired warning: {}", warning)
+                continue
+
             area = await StationSingleton.get_warning_area(warning.warning_area)
             if area is None:
                 logger.error("warning: {} - unknown area: {}", warning, area)
