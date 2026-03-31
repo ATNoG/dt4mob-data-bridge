@@ -85,8 +85,7 @@ class Station(BaseModel, frozen=True):
     id: int
     location: Point
     location_name: str
-    geotile_int: int
-    geotile_str: str
+    geotile: int
 
     def create_message(self, measurement: Measurement) -> dict[str, object]:
         return {

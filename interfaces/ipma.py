@@ -10,7 +10,7 @@ from models.geo import Point
 from models.meteo import Measurement, Station, Warning
 from storage.session import SessionSingleton
 from storage.station import StationSingleton
-from utils.geo import get_quadkey_int, get_quadkey_str
+from utils.geo import get_geotile
 
 
 async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
@@ -57,8 +57,7 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
                     id=station_id,
                     location=point,
                     location_name=d["properties"]["localEstacao"],
-                    geohash_int=get_quadkey_int(point.latitude, point.longitude, 31),
-                    geohash_str=get_quadkey_str(point.latitude, point.longitude, 31),
+                    geotile=get_geotile(point.latitude, point.longitude, 31),
                 ),
                 Measurement(**properties),
             )

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from models.waze import WazeRequest
 from storage.session import SessionSingleton
+from utils.geo import get_geotile
 
 
 class _Limits(BaseModel):
@@ -38,5 +39,7 @@ async def get_traffic_data(lat: float, lon: float, radius: float) -> WazeRequest
     url = f"https://www.waze.com/live-map/api/georss?top={lim.top}&bottom={lim.bottom}&left={lim.left}&right={lim.right}&env=row&types=traffic,alerts"
     logger.info("Getting Alerts and Jams for ({},{})", lat, lon)
     logger.debug("The url is: {}", url)
-    data = await session.get(url)
-    return WazeRequest(**(await data.json()))
+    response = await session.get(url)
+    data = await response.json()
+    data["geotile"] = get_geotile(lat, lon, 31)
+    return WazeRequest(**data)

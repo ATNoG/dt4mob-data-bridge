@@ -5,6 +5,7 @@ from pyproj.transformer import Transformer
 from models.geo import Point
 from models.barriers import Barrier
 from settings import settings
+from utils.geo import get_geotile
 
 transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 
@@ -12,8 +13,11 @@ transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 def generate_barrier(js: dict[str, Any]) -> Generator[Barrier, None, None]:
     for feature in js.get("features", []):
         barrier = feature.get("properties", {})
-        line: List[List[int]] = feature.get("geometry", []).get("coordinates", [])[0]
+        line: List[List[int]] = feature.get("geometry", {}).get("coordinates", [])[0]
         barrier["geometry"] = [convert_coordinates(coords) for coords in line]
+        # Use first point of the barrier to calculate the geotile
+        location = barrier["geometry"][0]
+        barrier["geotile"] = get_geotile(location.latitude, location.longitude, 15)
         yield Barrier(**barrier)
 
 

@@ -68,15 +68,13 @@ async def update_meteo() -> None:
     measurements = await get_meteorology_measurements()
     logger.debug("Got measurements from IPMA")
 
-    stations = [station for station, _ in measurements]
-    await StationSingleton.set_stations(stations)
-
     logger.debug("Posting received measurements")
     meteo = DevicesSingleton.get_device(DeviceType.METEO)
     if meteo is None:
         logger.error("Meteo device not found. Cannot update measurements.")
         return
 
+    logger.debug("Got {} stations", len(measurements))
     for station, measurement in measurements:
         logger.debug("Updating measurements for {}", station.id)
         await meteo.modify(station, measurement)
@@ -197,16 +195,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if is_device_active(DeviceType.METEO):
         await update_meteo()
         await update_meteo_warnings()
-    #     asyncio.create_task(loop_meteo())
-    #
-    # if is_device_active(DeviceType.TRAFFIC):
-    #     asyncio.create_task(update_traffic())
-    # if is_device_active(DeviceType.SIGN):
-    #     asyncio.create_task(update_signs())
-    # if is_device_active(DeviceType.BARRIER):
-    #     asyncio.create_task(update_barriers())
-    # if is_device_active(DeviceType.EQUIVIA):
-    #     asyncio.create_task(update_equivia())
+        asyncio.create_task(loop_meteo())
+
+    if is_device_active(DeviceType.TRAFFIC):
+        asyncio.create_task(update_traffic())
+    if is_device_active(DeviceType.SIGN):
+        asyncio.create_task(update_signs())
+    if is_device_active(DeviceType.BARRIER):
+        asyncio.create_task(update_barriers())
+    if is_device_active(DeviceType.EQUIVIA):
+        asyncio.create_task(update_equivia())
 
     yield  # Run the main application loop
 

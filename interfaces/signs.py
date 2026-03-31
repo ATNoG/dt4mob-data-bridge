@@ -6,6 +6,7 @@ from pyproj.transformer import Transformer
 from models.signs import Sign
 from models.geo import Point
 from settings import settings
+from utils.geo import get_geotile
 
 transformer = Transformer.from_crs("EPSG:3763", "EPSG:4326")
 
@@ -24,9 +25,11 @@ def generate_signs(js: dict[str, Any]) -> Generator[Sign, None, None]:
     sign_type = js.get("name")
     for feature in js.get("features", []):
         sign = feature.get("properties", {})
-        coords: List[int] = feature.get("geometry", []).get("coordinates", [])
+        coords: List[int] = feature.get("geometry", {}).get("coordinates", [])
         sign["type"] = sign_type
-        sign["location"] = convert_coordinates(coords)
+        location = convert_coordinates(coords)
+        sign["location"] = location
+        sign["geotile"] = get_geotile(location.latitude, location.longitude, 31)
         yield Sign(**sign)
 
 

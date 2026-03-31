@@ -83,8 +83,7 @@ class WazeRequest(BaseModel):
     endTimeMillis: datetime
     alerts: List[Alert] = []
     jams: List[Jam] = []
-    geotile_int: int
-    geotile_str: str
+    geotile: int
 
     @field_serializer("startTimeMillis", "endTimeMillis")
     def serialize_timestamp(self, dt: datetime) -> int:

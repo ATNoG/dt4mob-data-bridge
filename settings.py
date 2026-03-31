@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Self
+
 from pydantic import AnyHttpUrl, BaseModel, model_validator
 from pydantic_settings import (
     BaseSettings,

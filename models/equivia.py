@@ -67,6 +67,8 @@ class Vegetacao(int, Enum):
 
 class EquiviaBase(BaseModel):
     object_id: Union[int, str] = Field(alias="OBJECTID")
+    type: str
+    equivia_type: str  # Will be set in __init__
     categoria_via: Optional[CategoriaVia] = Field(alias="categoria_da_via")
     posicao: Optional[Posicao]
     location: Union[Point, PolyLine]
@@ -78,9 +80,12 @@ class EquiviaBase(BaseModel):
     km_fim: Optional[float] = None
     gestao: Optional[Gestao]
     condicao_ativo: Optional[bool]
-    type: str
-    geotile_int: int
-    geotile_str: str
+    geotile: int
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        # Set equivia_type based on actual subclass
+        self.equivia_type = self.__class__.__name__
 
     @field_validator("condicao_ativo", mode="before")
     @classmethod

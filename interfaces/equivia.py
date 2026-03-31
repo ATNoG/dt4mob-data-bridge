@@ -6,6 +6,7 @@ from pyproj.transformer import Transformer
 
 from models.geo import Point, PolyLine
 from settings import settings
+from utils.geo import get_geotile
 from models.equivia import (
     AcessosServentias,
     DrenagemPontual,
@@ -80,6 +81,18 @@ def generate_things(js: dict[str, Any]) -> Generator[EquiviaThings, None, None]:
             if len(segments) > 1:
                 thing["OBJECTID"] = f"{objid}-{i}"
                 thing["location"] = v
+
+            # Use the first point of the location to calculate the geotile
+            location_point: Point
+            if isinstance(thing["location"], Point):
+                location_point = thing["location"]
+            else:
+                assert isinstance(thing["location"], PolyLine)
+                location_point = thing["location"].root[0]
+
+            thing["geotile"] = get_geotile(
+                location_point.latitude, location_point.longitude, 31
+            )
 
             try:
                 match equivia_type:
