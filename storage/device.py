@@ -6,6 +6,7 @@ from devices.traffic import TrafficDevice
 from devices.signs import SignDevice
 from devices.barriers import BarrierDevice
 from devices.equivia import EquiviaDevice
+from devices.lights import LightsDevice
 from interfaces.hono import HonoDevice
 from settings import DeviceSettings, DeviceType
 from storage.session import SessionSingleton
@@ -47,6 +48,9 @@ class DevicesSingleton:
 
             case DeviceType.EQUIVIA:
                 item = EquiviaDevice(hono_conn)
+
+            case DeviceType.LIGHTS:
+                item = LightsDevice(hono_conn)
 
         cls.devices[device.type] = item
         return hono_conn

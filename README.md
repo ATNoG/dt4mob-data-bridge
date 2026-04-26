@@ -9,11 +9,11 @@ using the Eclipse Ditto protocol over HTTP.
 
 The service acts as a bridge between external data sources and a Hono/Ditto IoT
 platform. On startup, it auto-registers the configured virtual devices in
-Hono's Device Registry and immediately executes a first data sync cycle. Five
+Hono's Device Registry and immediately executes a first data sync cycle. Six
 device types are managed: meteo (meteorological stations from IPMA), traffic
 (Waze-sourced road incidents), sign (road sign inventory from GeoJSON), barrier
-(road barrier inventory from GeoJSON), and equivia (road infrastructure
-features from GeoJSON).
+(road barrier inventory from GeoJSON), equivia (road infrastructure
+features from GeoJSON), and lights (street light inventory from GeoJSON).
 
 ## Prerequisites
 
@@ -86,9 +86,9 @@ service registers in Hono and uses to publish telemetry. Exactly one
 authentication method must be specified per device, either passwd
 (password-based) or cert_path (client certificate), never both.
 
-| Key       | Description                                                                                     |
-| --------- | ----------------------------------------------------------------------------------------------- |
-| type      | Device type: one of traffic, meteo, sign, barrier, or equivia.                                  |
+| Key  | Description                                                                                     |
+| ---- | ----------------------------------------------------------------------------------------------- |
+| type | Device type: one of traffic, meteo, sign, barrier, equivia, or lights.                          |
 | policy_id | The Ditto policy ID to associate with the device upon creation.                                 |
 | passwd    | Plaintext password. The service hashes it using SHA-512 before registering it in Hono. hono.py  |
 | cert_path | Path to a PEM client certificate file for certificate-based authentication.                     |
@@ -106,17 +106,19 @@ around each defined coordinate.
 | latitude / longitude | WGS-84 coordinates of the sensor point.                                  |
 | area_radius          | Radius in metres to query around the point (default: 1000). settings.py  |
 
-### `[signs]`, `[barriers]`, `[equivia]` sections
+### `[signs]`, `[barriers]`, `[equivia]`, `[lights]` sections
 
 | Key          | Description                                                               |
 | ------------ | ------------------------------------------------------------------------- |
 | signs.dir    | Path to a directory containing road sign GeoJSON files.                   |
 | barriers.dir | Path to a single GeoJSON file containing road barrier features.           |
 | equivia.dir  | Path to a directory containing Equivia road infrastructure GeoJSON files. |
+| lights.file  | Path to a single GeoJSON file containing street light features.           |
 
 Equivia GeoJSON data must use the EPSG:3763 (PT-TM06) projected coordinate
 system; the service converts all coordinates to WGS-84 (EPSG:4326)
-automatically.
+automatically. The lights GeoJSON is expected to already use WGS-84
+coordinates.
 
 ### Full example `config.toml`
 
@@ -132,12 +134,12 @@ tenant_id      = "my-tenant"
 
 [[devices]]
 type      = "meteo"
-policy_id = "meteo:default"
+policy_id = "<policy_id>"
 passwd    = "a-strong-password"
 
 [[devices]]
 type      = "traffic"
-policy_id = "traffic:default"
+policy_id = "<policy_id>"
 passwd    = "a-strong-password"
 
 [[devices]]
@@ -147,12 +149,17 @@ passwd    = "a-strong-password"
 
 [[devices]]
 type      = "barrier"
-policy_id = "signs:default"
+policy_id = "<policy_id>"
 passwd    = "a-strong-password"
 
 [[devices]]
 type      = "equivia"
-policy_id = "signs:default"
+policy_id = "<policy_id>"
+passwd    = "a-strong-password"
+
+[[devices]]
+type      = "lights"
+policy_id = "<policy_id>"
 passwd    = "a-strong-password"
 
 [signs]
@@ -163,6 +170,9 @@ dir = "data/Barriers/Barreiras.geojson"
 
 [equivia]
 dir = "data/Equivia"
+
+[lights]
+file = "data/lights.geojson"
 
 [[tolls]]
 name      = "SensorPoint1"

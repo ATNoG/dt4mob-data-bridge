@@ -84,8 +84,6 @@ class EquiviaBase(BaseModel):
 
     def __init__(self, **data):
         super().__init__(**data)
-        # Set equivia_type based on actual subclass
-        self.equivia_type = self.__class__.__name__
 
     @field_validator("condicao_ativo", mode="before")
     @classmethod

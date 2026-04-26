@@ -21,6 +21,7 @@ class DeviceType(str, Enum):
     SIGN = "sign"
     BARRIER = "barrier"
     EQUIVIA = "equivia"
+    LIGHTS = "lights"
 
 
 class HonoSettings(BaseModel):
@@ -67,6 +68,10 @@ class EquiviaData(BaseModel):
     dir: str = ""
 
 
+class LightsData(BaseModel):
+    file: str = ""
+
+
 class Settings(BaseSettings):
     """Example loading values from the table used by default."""
 
@@ -84,6 +89,7 @@ class Settings(BaseSettings):
     signs: SignData = SignData()
     barriers: BarrierData = BarrierData()
     equivia: EquiviaData = EquiviaData()
+    lights: LightsData = LightsData()
 
     @classmethod
     def settings_customise_sources(

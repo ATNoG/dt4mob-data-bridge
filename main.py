@@ -9,6 +9,7 @@ from loguru import logger
 from interfaces.barriers import get_barrier
 from interfaces.equivia import get_equivia
 from interfaces.ipma import get_meteorology_measurements, get_meteorology_warnings
+from interfaces.lights import get_lights
 from interfaces.signs import get_signs
 from interfaces.waze import get_traffic_data
 from models.meteo import WarningArea
@@ -176,6 +177,24 @@ async def update_equivia() -> None:
     logger.debug("Finished updating all the road features")
 
 
+async def update_lights() -> None:
+    logger.info("Updating lights information")
+    lights_device = DevicesSingleton.get_device(DeviceType.LIGHTS)
+    if lights_device is None:
+        logger.error("Lights device not found. Cannot update light data.")
+        return
+
+    lights = get_lights()
+    logger.debug("Successfully got all the lights")
+    i = 1
+    for light in lights:
+        logger.debug("Updating light {}", f"{light.type}-{light.object_id}")
+        await lights_device.modify(None, light)
+        i = await batch_cooldown(i)
+
+    logger.debug("Finished updating all the lights")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("STARTUP: Creating Hono devices")
@@ -205,6 +224,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         asyncio.create_task(update_barriers())
     if is_device_active(DeviceType.EQUIVIA):
         asyncio.create_task(update_equivia())
+    if is_device_active(DeviceType.LIGHTS):
+        asyncio.create_task(update_lights())
 
     yield  # Run the main application loop
 

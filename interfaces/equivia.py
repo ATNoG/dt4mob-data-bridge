@@ -94,6 +94,8 @@ def generate_things(js: dict[str, Any]) -> Generator[EquiviaThings, None, None]:
                 location_point.latitude, location_point.longitude, 31
             )
 
+            thing["equivia_type"] = equivia_type
+
             try:
                 match equivia_type:
                     case "AcessosServentias":
