@@ -1,0 +1,57 @@
+# Version control
+.git
+.gitignore
+
+# Byte-compiled / optimized files
+__pycache__
+*.py[cod]
+*.pyc
+
+# Distribution / packaging
+.eggs
+*.egg-info
+dist
+build
+
+# Virtual environments
+.venv
+venv/
+env/
+
+# IDEs
+.idea
+.vscode
+*.swp
+*.swo
+
+# Ruff / mypy caches
+.ruff_cache
+.mypy_cache
+.pytest_cache
+
+# Local config (secrets)
+config.toml
+.env
+.envrc
+
+# Data files (mounted at runtime via Helm, not needed in context)
+data/
+
+# Documentation
+docs/
+README.md
+
+# Helm charts (built/deployed separately)
+charts/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+Jenkinsfile
+
+# Misc
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage
+*.log
