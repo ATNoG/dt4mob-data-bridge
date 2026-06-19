@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from enum import Enum
 
 from pydantic import BaseModel, Field, field_serializer, field_validator
@@ -86,6 +86,11 @@ class Station(BaseModel, frozen=True):
     location: Point
     location_name: str
     geotile: int
+    expiry_ts: datetime = datetime.now(timezone.utc) + timedelta(days=1)
+
+    @field_serializer("expiry_ts")
+    def serialize_time(self, time: datetime) -> str:
+        return time.isoformat()
 
     def create_message(self, measurement: Measurement) -> dict[str, object]:
         return {

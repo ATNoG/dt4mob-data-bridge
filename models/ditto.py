@@ -1,10 +1,9 @@
 from datetime import datetime
-from typing import Any, Dict, Iterable, List, Optional, Self, Union
 from enum import Enum
+from typing import Any, Dict, Iterable, List, Optional, Self, Union
 
 from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 from typing_extensions import Annotated
-
 
 RequestedAck = Annotated[str, Field(pattern=r"[a-zA-Z0-9-_:]{3,100}")]
 
@@ -75,7 +74,7 @@ Action = Union[
 
 
 class Topic(BaseModel):
-    namespace: str
+    subject: str
     thingName: str
     group: Group
     channel: Optional[Channel]
@@ -106,9 +105,9 @@ class Topic(BaseModel):
     @model_serializer
     def ser_model(self) -> str:
         if self.channel:
-            res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.channel.value}/{self.criterion.value}"
+            res = f"{self.subject}/{self.thingName}/{self.group.value}/{self.channel.value}/{self.criterion.value}"
         else:
-            res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.criterion.value}"
+            res = f"{self.subject}/{self.thingName}/{self.group.value}/{self.criterion.value}"
 
         if self.action:
             action_value = (
@@ -146,7 +145,6 @@ class Feature(BaseModel):
 
 
 class Thing(BaseModel):
-    thingId: str = Field(exclude=True)
     policyId: str
     definition: Optional[str] = None
     attributes: Optional[Dict[str, Any]] = None
