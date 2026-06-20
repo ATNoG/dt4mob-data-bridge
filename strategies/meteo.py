@@ -6,6 +6,7 @@ from interfaces.ipma import get_meteorology_measurements
 from models.ditto import DittoProtocolEnvelope, Feature
 from models.meteo import Measurement, Station
 from strategies.strategy import BaseStrategy
+from utils.geo import get_geotile
 
 
 @final
@@ -23,6 +24,8 @@ class MeteoStrategy(BaseStrategy):
     ) -> DittoProtocolEnvelope:
         station, measurement = tup
         attributes = station.model_dump()
+        geotile = get_geotile(station.location.latitude, station.location.longitude, 31)
+        attributes["geotile"] = geotile
         features = {"meteorology": Feature(properties=measurement.model_dump())}
         topic = self.create_topic(str(station.id))
         return self.create_envelope(topic, attributes, features)

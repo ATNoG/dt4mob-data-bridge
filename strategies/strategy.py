@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from models.ditto import (
     Action,
@@ -44,6 +44,7 @@ class BaseStrategy(ABC):
         message_topic: Topic,
         attributes: dict[str, object] | None = None,
         features: Dict[str, Feature] | None = None,
+        path: str = "/",
     ) -> DittoProtocolEnvelope:
         thing = Thing(
             policyId=self.policyId,
@@ -51,5 +52,12 @@ class BaseStrategy(ABC):
             attributes=attributes,
         )
 
-        env = DittoProtocolEnvelope(topic=message_topic, value=thing)
-        return env
+        return DittoProtocolEnvelope(topic=message_topic, path=path, value=thing)
+
+    def create_envelope_raw(
+        self,
+        message_topic: Topic,
+        value: Any = None,
+        path: str = "/",
+    ) -> DittoProtocolEnvelope:
+        return DittoProtocolEnvelope(topic=message_topic, path=path, value=value)

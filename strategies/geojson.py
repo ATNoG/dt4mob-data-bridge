@@ -6,8 +6,10 @@ from loguru import logger
 from pydantic import ValidationError
 
 from models.ditto import DittoProtocolEnvelope
+from models.geo import PolyLine
 from models.geojson import GeoJSON
 from strategies.strategy import BaseStrategy
+from utils.geo import convert_coordinates, get_geotile, representative_point
 
 
 @final
@@ -44,7 +46,23 @@ class GeoJsonStrategy(BaseStrategy):
         envelopes = []
         for feature in features:
             attributes = feature.properties
-            attributes["geometry"] = feature.geometry
+            coords = feature.geometry
+
+            if coords.type == "Point":
+                attributes["location"] = convert_coordinates(coords.coordinates)
+            elif coords.type == "MultiLineString":
+                attributes["location"] = PolyLine(
+                    [convert_coordinates(x) for x in coords.coordinates[0]]
+                )
+            else:
+                attributes["location"] = PolyLine(
+                    [convert_coordinates(x) for x in coords.coordinates[0][0]]
+                )
+
+            midpoint = representative_point(attributes["location"])
+            if midpoint:
+                geotile = get_geotile(midpoint.latitude, midpoint.longitude, 31)
+                attributes["geotile"] = geotile
 
             id_key = next((key for key in attributes if "ID" in key), "")
             thing_id = attributes.get(id_key, None)
@@ -79,6 +97,7 @@ def read_file(path: str) -> GeoJSON:
         return GeoJSON.model_validate(ret)
     except ValidationError:
         logger.error("The file {} does not contain valid GeoJSON")
+        raise FileReadError()
     except Exception as e:
         logger.error("An error has occured while loading the GeoJSON in {}", path)
         raise FileReadError(e)
@@ -86,3 +105,15 @@ def read_file(path: str) -> GeoJSON:
 
 class FileReadError(RuntimeError):
     pass
+
+
+def _flatten(nested):
+    stack = list(nested)
+    result = []
+    while stack:
+        item = stack.pop()
+        if isinstance(item, list):
+            stack.extend(item)
+        else:
+            result.append(item)
+    return result[::-1]
