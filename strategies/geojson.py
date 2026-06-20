@@ -14,8 +14,15 @@ from utils.geo import convert_coordinates, get_geotile, representative_point
 
 @final
 class GeoJsonStrategy(BaseStrategy):
-    def __init__(self, subject: str, policyId: str, dir: str | None, file: str | None):
-        super().__init__(subject, policyId)
+    def __init__(
+        self,
+        namespace: str,
+        subject: str,
+        policyId: str,
+        dir: str | None,
+        file: str | None,
+    ):
+        super().__init__(namespace, subject, policyId)
         if (dir is None) == (file is None):
             raise ValueError(
                 "The GeoJSON strategy can only parse either a 'dir' or a 'file', and one must exist. dir: {}; file: {}",
@@ -28,7 +35,8 @@ class GeoJsonStrategy(BaseStrategy):
 
     async def get_telemetry(self) -> List[DittoProtocolEnvelope]:
         if self.file:
-            file = read_file(self.file)
+            with open(self.file, "r") as f:
+                file = read_file(f.read())
             return self.envelope_from_geojson(file)
 
         if self.dir:
@@ -50,16 +58,18 @@ class GeoJsonStrategy(BaseStrategy):
 
             if coords.type == "Point":
                 attributes["location"] = convert_coordinates(coords.coordinates)
+                midpoint = representative_point(attributes["location"])
             elif coords.type == "MultiLineString":
-                attributes["location"] = PolyLine(
+                attributes["geometry"] = PolyLine(
                     [convert_coordinates(x) for x in coords.coordinates[0]]
                 )
+                midpoint = representative_point(attributes["geometry"])
             else:
-                attributes["location"] = PolyLine(
+                attributes["geometry"] = PolyLine(
                     [convert_coordinates(x) for x in coords.coordinates[0][0]]
                 )
+                midpoint = representative_point(attributes["geometry"])
 
-            midpoint = representative_point(attributes["location"])
             if midpoint:
                 geotile = get_geotile(midpoint.latitude, midpoint.longitude, 31)
                 attributes["geotile"] = geotile
@@ -91,15 +101,15 @@ def read_dir(dir: str) -> Generator[Any, None, None]:
                 pass
 
 
-def read_file(path: str) -> GeoJSON:
+def read_file(content: str) -> GeoJSON:
     try:
-        ret = json.loads(path)
+        ret = json.loads(content)
         return GeoJSON.model_validate(ret)
     except ValidationError:
         logger.error("The file {} does not contain valid GeoJSON")
         raise FileReadError()
     except Exception as e:
-        logger.error("An error has occured while loading the GeoJSON in {}", path)
+        logger.error("An error has occured while loading the GeoJSON")
         raise FileReadError(e)
 
 

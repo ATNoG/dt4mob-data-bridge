@@ -3,12 +3,12 @@ from typing import Any
 from pydantic import BaseModel
 
 
-class _Geometry:
+class _Geometry(BaseModel):
     type: str
     coordinates: list[Any]
 
 
-class _Features:
+class _Features(BaseModel):
     type: str
     properties: dict[str, Any]
     geometry: _Geometry

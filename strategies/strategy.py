@@ -15,7 +15,8 @@ from models.ditto import (
 
 
 class BaseStrategy(ABC):
-    def __init__(self, subject: str, policyId: str) -> None:
+    def __init__(self, namespace: str, subject: str, policyId: str) -> None:
+        self.namespace = namespace
         self.subject = subject
         self.policyId = policyId
 
@@ -31,9 +32,9 @@ class BaseStrategy(ABC):
         action: Action | None = CommandAction.MODIFY,
     ) -> Topic:
         return Topic(
-            subject=self.subject,
+            namespace=self.namespace,
             channel=Channel.TWIN,
-            thingName=thingName,
+            thingName=f"{self.subject}:{thingName}",
             group=Group.THING,
             criterion=Criterion.COMMAND,
             action=CommandAction.MODIFY,
@@ -41,18 +42,19 @@ class BaseStrategy(ABC):
 
     def _create_envelope(
         self,
-        message_topic: Topic,
+        topic: Topic,
         attributes: dict[str, object] | None = None,
         features: Dict[str, Feature] | None = None,
         path: str = "/",
     ) -> DittoProtocolEnvelope:
         thing = Thing(
+            thingId=f"{topic.namespace}:{topic.thingName}",
             policyId=self.policyId,
             features=features,
             attributes=attributes,
         )
 
-        return DittoProtocolEnvelope(topic=message_topic, path=path, value=thing)
+        return DittoProtocolEnvelope(topic=topic, path=path, value=thing)
 
     def _create_envelope_raw(
         self,

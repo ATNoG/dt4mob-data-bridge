@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import List, Optional, Self
 
 from pydantic import AnyHttpUrl, BaseModel, model_validator
@@ -23,6 +22,10 @@ class HonoSettings(BaseModel):
 
 class DeviceSettings(BaseModel):
     policy_id: str
+    # HACK: The namespace is configured by the certificate (?) but needs to go
+    # on the topic, hence it also needing to be on the settings
+    # TODO: See if this namespace can be derived at runtime from the certificate
+    namespace: str
     cert_path: str
     secret_key: str
     strategies: List[StrategyType]

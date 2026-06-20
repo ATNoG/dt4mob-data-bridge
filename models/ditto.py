@@ -74,7 +74,7 @@ Action = Union[
 
 
 class Topic(BaseModel):
-    subject: str
+    namespace: str
     thingName: str
     group: Group
     channel: Optional[Channel]
@@ -105,9 +105,9 @@ class Topic(BaseModel):
     @model_serializer
     def ser_model(self) -> str:
         if self.channel:
-            res = f"{self.subject}/{self.thingName}/{self.group.value}/{self.channel.value}/{self.criterion.value}"
+            res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.channel.value}/{self.criterion.value}"
         else:
-            res = f"{self.subject}/{self.thingName}/{self.group.value}/{self.criterion.value}"
+            res = f"{self.namespace}/{self.thingName}/{self.group.value}/{self.criterion.value}"
 
         if self.action:
             action_value = (
@@ -145,6 +145,7 @@ class Feature(BaseModel):
 
 
 class Thing(BaseModel):
+    thingId: str
     policyId: str
     definition: Optional[str] = None
     attributes: Optional[Dict[str, Any]] = None

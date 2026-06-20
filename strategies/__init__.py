@@ -1,5 +1,6 @@
 from typing import Annotated, List, Literal, Self, Union
 
+from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
 from strategies.geojson import GeoJsonStrategy
@@ -46,12 +47,14 @@ StrategyType = Annotated[Union[_Meteo, _Traffic, _GeoJson], Field(discriminator=
 def _type_to_strategy(
     type: StrategyType,
     policyId: str,
+    namespace: str,
 ) -> Union[MeteoStrategy, TrafficStrategy, GeoJsonStrategy]:
     match type:
         case _Meteo():
-            return MeteoStrategy(type.subject, policyId)
+            return MeteoStrategy(namespace, type.subject, policyId)
         case _Traffic():
             return TrafficStrategy(
+                namespace,
                 type.subject,
                 policyId,
                 type.sensorName,
@@ -60,11 +63,17 @@ def _type_to_strategy(
                 type.longitude,
             )
         case _GeoJson():
-            return GeoJsonStrategy(type.subject, policyId, type.dir, type.file)
+            return GeoJsonStrategy(
+                namespace, type.subject, policyId, type.dir, type.file
+            )
 
 
 def acquire_strategies(
     strategies: List[StrategyType],
     policyId: str,
+    namespace: str,
 ) -> List[BaseStrategy]:
-    return [_type_to_strategy(s, policyId) for s in strategies]
+    logger.debug("Acquiring strategies {} for policyId {}", strategies, policyId)
+    ret = [_type_to_strategy(s, policyId, namespace) for s in strategies]
+    logger.debug("Acquired strategies {}", ret)
+    return ret
