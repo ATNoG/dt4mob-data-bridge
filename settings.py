@@ -9,19 +9,7 @@ from pydantic_settings import (
     TomlConfigSettingsSource,
 )
 
-
-class Environment(str, Enum):
-    PROD = "prod"
-    DEV = "dev"
-
-
-class DeviceType(str, Enum):
-    TRAFFIC = "traffic"
-    METEO = "meteo"
-    SIGN = "sign"
-    BARRIER = "barrier"
-    EQUIVIA = "equivia"
-    LIGHTS = "lights"
+from strategies import StrategyType
 
 
 class HonoSettings(BaseModel):
@@ -34,42 +22,16 @@ class HonoSettings(BaseModel):
 
 
 class DeviceSettings(BaseModel):
-    type: DeviceType = DeviceType.TRAFFIC
-    policy_id: str = ""
-    passwd: Optional[str] = None
-    cert_path: Optional[str] = None
+    policy_id: str
+    cert_path: str
+    secret_key: str
+    strategies: List[StrategyType]
 
     @model_validator(mode="after")
-    def validate_credentials(self) -> Self:
-        if (self.passwd is not None) + (self.cert_path is not None) != 1:
-            raise ValueError(
-                "A device must have one and only one authentication method"
-            )
+    def validate_strategies(self) -> Self:
+        if len(self.strategies) < 1:
+            raise ValueError("A device must have atleast 1 strategy")
         return self
-
-
-class Toll(BaseModel):
-    name: str
-    road: str
-    latitude: float
-    longitude: float
-    area_radius: int = 1000
-
-
-class SignData(BaseModel):
-    dir: str = ""
-
-
-class BarrierData(BaseModel):
-    dir: str = ""
-
-
-class EquiviaData(BaseModel):
-    dir: str = ""
-
-
-class LightsData(BaseModel):
-    file: str = ""
 
 
 class Settings(BaseSettings):
@@ -82,14 +44,8 @@ class Settings(BaseSettings):
     )
 
     hono: HonoSettings = HonoSettings()
-    env: Environment = Environment.PROD
     polling_interval: int = 3600
-    tolls: List[Toll] = []
     devices: List[DeviceSettings] = []
-    signs: SignData = SignData()
-    barriers: BarrierData = BarrierData()
-    equivia: EquiviaData = EquiviaData()
-    lights: LightsData = LightsData()
 
     @classmethod
     def settings_customise_sources(

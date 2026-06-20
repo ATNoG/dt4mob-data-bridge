@@ -23,7 +23,7 @@ class BaseStrategy(ABC):
     async def get_telemetry(self) -> List[DittoProtocolEnvelope]:
         raise NotImplementedError()
 
-    def create_topic(
+    def _create_topic(
         self,
         thingName: str,
         channel: Channel = Channel.TWIN,
@@ -39,7 +39,7 @@ class BaseStrategy(ABC):
             action=CommandAction.MODIFY,
         )
 
-    def create_envelope(
+    def _create_envelope(
         self,
         message_topic: Topic,
         attributes: dict[str, object] | None = None,
@@ -54,7 +54,7 @@ class BaseStrategy(ABC):
 
         return DittoProtocolEnvelope(topic=message_topic, path=path, value=thing)
 
-    def create_envelope_raw(
+    def _create_envelope_raw(
         self,
         message_topic: Topic,
         value: Any = None,

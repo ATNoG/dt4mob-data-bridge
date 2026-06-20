@@ -10,8 +10,8 @@ from utils.geo import get_geotile
 class TrafficStrategy(BaseStrategy):
     def __init__(
         self,
-        policyId: str,
         subject: str,
+        policyId: str,
         sensorName: str,
         road: str,
         latitude: float,
@@ -29,7 +29,7 @@ class TrafficStrategy(BaseStrategy):
     async def get_telemetry(self) -> List[DittoProtocolEnvelope]:
         data = await get_traffic_data(self.latitude, self.longitude, self.radius)
 
-        modify_topic = self.create_topic(self.sensorName)
+        modify_topic = self._create_topic(self.sensorName)
         geotile = get_geotile(self.latitude, self.longitude, 31)
         attributes = {
             "sensorName": self.sensorName,
@@ -41,7 +41,7 @@ class TrafficStrategy(BaseStrategy):
             "radius": self.radius,
             "geotile": geotile,
         }
-        thing = self.create_envelope(modify_topic, attributes)
+        thing = self._create_envelope(modify_topic, attributes)
         envelopes = [thing]
 
         envelopes.append(self._create_alert_feature(data))
@@ -50,9 +50,9 @@ class TrafficStrategy(BaseStrategy):
         return envelopes
 
     def _create_alert_feature(self, data) -> DittoProtocolEnvelope:
-        merge_topic = self.create_topic(self.sensorName, action=CommandAction.MERGE)
+        merge_topic = self._create_topic(self.sensorName, action=CommandAction.MERGE)
         alert_feature = Feature(properties={"alerts": data.alerts})
-        alert_envelope = self.create_envelope_raw(
+        alert_envelope = self._create_envelope_raw(
             merge_topic, value=alert_feature, path="/features/alerts"
         )
 
@@ -60,14 +60,14 @@ class TrafficStrategy(BaseStrategy):
 
     def _create_jams_features(self, data) -> List[DittoProtocolEnvelope]:
         envelopes = []
-        merge_topic = self.create_topic(self.sensorName, action=CommandAction.MERGE)
+        merge_topic = self._create_topic(self.sensorName, action=CommandAction.MERGE)
 
         for i, jam in enumerate(data.jams):
             jam_feature = Feature(properties={str(i): jam})
 
             # TODO: create enough features to maximize the data limit of Hono, reducing the total messages that need to be sent
 
-            jam_envelope = self.create_envelope_raw(
+            jam_envelope = self._create_envelope_raw(
                 merge_topic, value=jam_feature, path="/features/alerts"
             )
             envelopes.append(jam_envelope)

@@ -67,8 +67,8 @@ class GeoJsonStrategy(BaseStrategy):
             id_key = next((key for key in attributes if "ID" in key), "")
             thing_id = attributes.get(id_key, None)
 
-            topic = self.create_topic(str(thing_id))
-            envelope = self.create_envelope(topic, attributes)
+            topic = self._create_topic(str(thing_id))
+            envelope = self._create_envelope(topic, attributes)
             envelopes.append(envelope)
 
         return envelopes

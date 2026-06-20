@@ -27,5 +27,5 @@ class MeteoStrategy(BaseStrategy):
         geotile = get_geotile(station.location.latitude, station.location.longitude, 31)
         attributes["geotile"] = geotile
         features = {"meteorology": Feature(properties=measurement.model_dump())}
-        topic = self.create_topic(str(station.id))
-        return self.create_envelope(topic, attributes, features)
+        topic = self._create_topic(str(station.id))
+        return self._create_envelope(topic, attributes, features)

@@ -1,9 +1,11 @@
 import json
 from typing import Any, Generator, List
+
 from loguru import logger
 from pyproj.transformer import Transformer
-from models.geo import Point
+
 from models.barriers import Barrier
+from models.geo import Point
 from settings import settings
 from utils.geo import get_geotile
 
