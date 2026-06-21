@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 from typing import Any, Generator, List, final
 
 from loguru import logger
@@ -35,6 +36,7 @@ class GeoJsonStrategy(BaseStrategy):
 
     async def get_telemetry(self) -> List[DittoProtocolEnvelope]:
         if self.file:
+            # FIXME: Is a blocking operation
             with open(self.file, "r") as f:
                 file = read_file(f.read())
             return self.envelope_from_geojson(file)
@@ -73,6 +75,7 @@ class GeoJsonStrategy(BaseStrategy):
             if midpoint:
                 geotile = get_geotile(midpoint.latitude, midpoint.longitude, 31)
                 attributes["geotile"] = geotile
+            attributes["expiry_ts"] = datetime.now(timezone.utc) + timedelta(days=1)
 
             id_key = next((key for key in attributes if "ID" in key), "")
             thing_id = attributes.get(id_key, None)
@@ -86,11 +89,13 @@ class GeoJsonStrategy(BaseStrategy):
 
 def read_dir(dir: str) -> Generator[Any, None, None]:
     logger.info("Reading directory {}", dir)
+    # FIXME: Is a blocking operation
     files = os.listdir(dir)
 
     for file in files:
         logger.debug("Attempting to load the Equivia GeoJSON data in {}", file)
 
+        # FIXME: Is a blocking operation
         with open(f"{dir}/{file}", "r") as f:
             try:
                 yield read_file(f.read())

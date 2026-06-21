@@ -4,7 +4,7 @@ from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
 from strategies.geojson import GeoJsonStrategy
-from strategies.meteo import MeteoStrategy
+from strategies.meteo import MeteoStrategy, WarningsStrategy
 from strategies.strategy import BaseStrategy
 from strategies.traffic import TrafficStrategy
 
@@ -16,6 +16,10 @@ class _BaseType(BaseModel):
 
 class _Meteo(_BaseType):
     type: Literal["meteo"] = "meteo"
+
+
+class _MeteoWarnings(_BaseType):
+    type: Literal["meteo_warnings"] = "meteo_warnings"
 
 
 class _Traffic(_BaseType):
@@ -41,17 +45,21 @@ class _GeoJson(_BaseType):
         return self
 
 
-StrategyType = Annotated[Union[_Meteo, _Traffic, _GeoJson], Field(discriminator="type")]
+StrategyType = Annotated[
+    Union[_Meteo, _Traffic, _GeoJson, _MeteoWarnings], Field(discriminator="type")
+]
 
 
 def _type_to_strategy(
     type: StrategyType,
     policyId: str,
     namespace: str,
-) -> Union[MeteoStrategy, TrafficStrategy, GeoJsonStrategy]:
+) -> BaseStrategy:
     match type:
         case _Meteo():
             return MeteoStrategy(namespace, type.subject, policyId)
+        case _MeteoWarnings():
+            return WarningsStrategy(namespace, type.subject, policyId)
         case _Traffic():
             return TrafficStrategy(
                 namespace,

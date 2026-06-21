@@ -14,7 +14,6 @@ from strategies import StrategyType
 class HonoSettings(BaseModel):
     """Settings for establishing a connection with the Hono Instance"""
 
-    device_registry: AnyHttpUrl = AnyHttpUrl("http://localhost:28443")
     http_adapter: AnyHttpUrl = AnyHttpUrl("http://localhost:8443")
     tenant_id: str = "DEFAULT_TENANT"
     server_cert_path: Optional[str] = None
@@ -27,7 +26,7 @@ class DeviceSettings(BaseModel):
     # TODO: See if this namespace can be derived at runtime from the certificate
     namespace: str
     cert_path: str
-    secret_key: str
+    private_key: str
     strategies: List[StrategyType]
 
     @model_validator(mode="after")
@@ -47,7 +46,6 @@ class Settings(BaseSettings):
     )
 
     hono: HonoSettings = HonoSettings()
-    polling_interval: int = 3600
     devices: List[DeviceSettings] = []
 
     @classmethod

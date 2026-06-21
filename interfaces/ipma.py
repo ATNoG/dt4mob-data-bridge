@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Tuple
 
 from aiohttp import ClientResponseError
@@ -7,7 +7,7 @@ from loguru import logger
 from pydantic import ValidationError
 
 from models.geo import Point
-from models.meteo import Measurement, Station, Warning
+from models.meteo import Measurement, Station, Warning, WarningArea
 from storage.session import SessionSingleton
 from storage.station import StationSingleton
 from utils.geo import get_geotile
@@ -54,6 +54,7 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
         res.append(
             (
                 Station(
+                    expiry_ts=datetime.now(timezone.utc) + timedelta(days=1),
                     id=station_id,
                     location=point,
                     location_name=d["properties"]["localEstacao"],
@@ -70,6 +71,15 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
     logger.debug("Measurements acquired successfully")
 
     return res
+
+
+async def populate_stations() -> None:
+    logger.info("Updating metereology stations' information")
+    measurements = await get_meteorology_measurements()
+    logger.debug("Got measurements from IPMA")
+
+    stations = [station for station, _ in measurements]
+    await StationSingleton.set_stations(stations)
 
 
 async def get_meteorology_warnings() -> Dict[Station, List[Warning]]:
@@ -127,3 +137,24 @@ async def get_meteorology_warnings() -> Dict[Station, List[Warning]]:
         logger.warning("Failed to parse warning: {}", e)
 
     return ret
+
+
+async def populate_warning_areas() -> None:
+    logger.debug("Populating the warning areas in the Station Singleton")
+    session = SessionSingleton.get_session()
+
+    req = await session.get("https://api.ipma.pt/open-data/distrits-islands.json")
+    try:
+        req.raise_for_status()
+    except Exception as e:
+        logger.error(
+            "An error has occured while getting the warning areas from IPMA API, {}", e
+        )
+        return
+
+    data = await req.json()
+    areas = [WarningArea.model_validate(area) for area in data["data"]]
+
+    logger.debug("Successfully acquired the warning areas {}", areas)
+    await StationSingleton.set_warning_areas(areas)
+    logger.debug("Successfully stored the warning areas")

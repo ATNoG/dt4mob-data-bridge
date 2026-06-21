@@ -1,9 +1,14 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Self, Union
+from typing import Annotated, Any, Dict, Iterable, List, Optional, Self, Union
 
-from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
-from typing_extensions import Annotated
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    model_serializer,
+    model_validator,
+)
 
 RequestedAck = Annotated[str, Field(pattern=r"[a-zA-Z0-9-_:]{3,100}")]
 
@@ -163,12 +168,18 @@ class DittoProtocolEnvelope(BaseModel):
     headers: Optional[Headers] = None
     path: str = "/"
     fields: Optional[str] = None
-    value: Optional[DittoEnvelopeValue] = None
+    value: Optional[DittoEnvelopeValue | Any] = None
     extra: Optional[Dict[str, Any]] = None
 
     # Events
     revision: Optional[float] = None
     timestamp: Optional[datetime] = None
+
+    @model_validator(mode="after")
+    def check_value(self) -> Self:
+        if self.path == "/" and not isinstance(self.value, DittoEnvelopeValue):
+            raise ValueError("The provided value for the message is not valid")
+        return self
 
 
 DittoMessage = Iterable[DittoProtocolEnvelope]

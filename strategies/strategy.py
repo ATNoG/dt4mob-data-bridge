@@ -33,11 +33,11 @@ class BaseStrategy(ABC):
     ) -> Topic:
         return Topic(
             namespace=self.namespace,
-            channel=Channel.TWIN,
+            channel=channel,
             thingName=f"{self.subject}:{thingName}",
             group=Group.THING,
-            criterion=Criterion.COMMAND,
-            action=CommandAction.MODIFY,
+            criterion=criterion,
+            action=action,
         )
 
     def _create_envelope(

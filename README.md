@@ -1,6 +1,6 @@
 # Data Bridge
 
-Data Bridge is a FastAPI-based data integration service that continuously polls
+Data Bridge is a FastAPI-based data integration service that polls
 multiple road and meteorological data sources (IPMA, Waze, and local GeoJSON
 files) and forwards the normalized data to an Eclipse Hono IoT device registry
 using the Eclipse Ditto protocol over HTTP.
@@ -8,212 +8,128 @@ using the Eclipse Ditto protocol over HTTP.
 ## Overview
 
 The service acts as a bridge between external data sources and a Hono/Ditto IoT
-platform. On startup, it auto-registers the configured virtual devices in
-Hono's Device Registry and immediately executes a first data sync cycle. Six
-device types are managed: meteo (meteorological stations from IPMA), traffic
-(Waze-sourced road incidents), sign (road sign inventory from GeoJSON), barrier
-(road barrier inventory from GeoJSON), equivia (road infrastructure
-features from GeoJSON), and lights (street light inventory from GeoJSON).
+platform.
 
 ## Prerequisites
 
-Python ≥ 3.13.5 (required by the project manifest).
+Python ≥ 3.13 (required by the project manifest).
 
-A running Eclipse Hono instance accessible over HTTP, with a working Device Registry endpoint and an HTTP Adapter endpoint.
-
-Local GeoJSON data files for signs, barriers, and Equivia road features, organized in directories as described below.
-
+A running Eclipse Hono instance accessible over HTTP, with a working HTTP Adapter endpoint.
 Network access to the IPMA Open API (api.ipma.pt) for meteorological data.
-
 Network access to the Waze CCP Traffic Data API for traffic and incident data.
 
-## Installation
+> **_NOTE:_**  The interaction with Waze is currently unavailable.
 
-Clone or copy the project source to your machine. The project uses
-pyproject.toml for dependency management, so you can install it with any PEP
-517-compliant tool. Using uv (recommended) or pip:
+# User's Manual
 
-```bash
-# Using uv (recommended)
-uv sync
+This section contains the instructions on how to use the Data Bridge, namely
+how to configure the different required aspects and what their functionality
+is.
 
-# Using pip with a virtual environment
-python -m venv .venv
-source .venv/bin/activate
-pip install .
+# Programmer's Manual
+
+This section contains the instructions on how to expand the Data Bridge, namely
+how to add support for more devices and data sources.
+
+# Administrator Manual
+
+This section contains the instructions on how to deploy the Data Bridge,
+especially how it is packaged as either a Docker container or a Helm chart for
+deployment in a Kubernetes Cluster.
+
+
+-------------------------------------------------------------------------------
+
+# Geotile Implementation Guide
+
+# Introduction
+
+Geotiles are a method used in geographic information systems (GIS) for dividing the Earth's surface into a hierarchical grid of tiles. Each tile corresponds to a defined geographic area, making geotiles essential for spatial indexing. Their primary function is to aid in the efficient search for objects or regions within a specified area by reducing the geographic search space.
+
+Geotiles are particularly useful for applications that handle large volumes of geospatial data, as they enable fast querying, filtering, and zooming to smaller areas of interest.
+
+## Overview
+
+In this implementation, geotiles are calculated using a hierarchical grid system known as QuadTiles. These tiles are used for geospatial data storage and indexing, and the algorithm allows efficient spatial queries by breaking the Earth's surface into recursive quadrants. The geotile information is encoded as a 64-bit signed integer for compactness and ease of manipulation.
+
+---
+
+## The Algorithm
+
+Geotiles are calculated based on latitude, longitude, and zoom level. The algorithm follows these steps:
+
+1. **Convert Latitude and Longitude to Tile Coordinates:**
+   - Convert the longitude to an `x` coordinate.
+   - Convert the latitude to a `y` coordinate using the Mercator projection.
+   - Map these coordinates onto a grid defined by the zoom level.
+
+2. **Encode Coordinates into a Single Quadkey:**
+   - For each level of zoom:
+     - Determine the quadrant of the current point.
+     - Encode the quadrant as a combination of `x` and `y` bits.
+   - This step results in a compact integer representation of the tile (quadkey).
+
+### Function Definition
+
+```python
+import math
+
+def get_geotile(lat: float, lng: float, zoom: int) -> int:
+    x = int((lng + 180) / 360 * (1 << zoom))
+    y = int(
+        (
+            1
+            - math.log(math.tan(math.radians(lat)) + 1 / math.cos(math.radians(lat)))
+            / math.pi
+        )
+        / 2
+        * (1 << zoom)
+    )
+
+    quadkey = 0
+    for i in range(zoom, 0, -1):
+        x_bit = (x >> i) & 1
+        y_bit = (y >> i) & 1
+        quadkey = (quadkey << 2) | (y_bit << 1) | x_bit
+    return quadkey
 ```
 
-For development, install the dev dependency group as well, which includes ruff (linter), ty (type checker), and pre-commit hooks:
+---
 
+## Packaging as Signed Integer
 
-```bash
-uv sync --group dev
-pre-commit install
+The geotile quadkey is represented using a signed 64-bit integer, where:
+
+- **Even bits** represent the x-coordinate (longitude) at each zoom level.
+- **Odd bits** represent the y-coordinate (latitude) at each zoom level.
+
+This gives us a unique index for each tile based on its spatial positioning. The algorithm supports up to a maximum zoom level of 31 to comply with the constraints of a signed 64-bit integer.
+
+---
+
+## Searching Geotiles
+
+Efficient searching for geotiles within a specific zoom level and area (bounds) is enabled via the `get_tile_bounds` function.
+
+### How Bounds are Calculated
+Given a latitude, longitude, and zoom level:
+1. Compute the geotile (quadkey) for the tile containing the point.
+2. Adjust the bounds based on the desired zoom level.
+
+```python
+def get_tile_bounds(lat: float, lng: float, tile_zoom: int, max_zoom: int = 31):
+    tile_qk = get_geotile(lat, lng, tile_zoom)
+    shift_bits = 2 * (max_zoom - tile_zoom)
+    lower_bound = tile_qk << shift_bits
+    upper_bound = (tile_qk + 1) << shift_bits
+
+    return lower_bound, upper_bound
 ```
 
-## Configuration
+### Example Query for Eclipse Ditto
 
-All configuration is loaded from config.toml, placed in the working directory
-from which the service is launched. Environment variables can also override any
-setting using double-underscore (__) as a nested delimiter (e.g.,
-HONO__TENANT_ID=my-tenant). Environment variables take precedence over the TOML
-file.
+The lower and upper bounds computed by `get_tile_bounds` can be used in Resource Query Language (RQL). The following query retrieves all resources within the computed geotile bounds:
 
-### Top-level keys
-
-| Key              | Type              | Default | Description                                                                          |
-| ---------------- | ----------------- | ------- | -----------------------------------------------------------------------------------  |
-| env              | "prod" or "dev"   | "prod"  | Runtime environment. In dev, SSL verification is disabled for Hono requests. hono.py |
-| polling_interval | integer (seconds) | 3600    | How often the service polls data sources in its background loops. settings.py        |
-
-
-### `[Hono]` section
-
-This section configures the connection to your Eclipse Hono instance.
-
-| Key              | Default                | Description                                                              |
-| ---------------- | ---------------------- | ------------------------------------------------------------------------ |
-| device_registry  | http://localhost:28443 | Base URL of the Hono Device Registry REST API.                           |
-| http_adapter     | http://localhost:8443  | Base URL of the Hono HTTP Adapter for telemetry publishing.              |
-| tenant_id        | "DEFAULT_TENANT"       | The Hono tenant identifier under which devices are registered.           |
-| server_cert_path | null                   | Optional path to the Hono server's CA certificate for mTLS verification. |
-
-
-### `[[devices]]` array
-
-Each entry in the [[devices]] array declares one logical IoT device that the
-service registers in Hono and uses to publish telemetry. Exactly one
-authentication method must be specified per device, either passwd
-(password-based) or cert_path (client certificate), never both.
-
-| Key  | Description                                                                                     |
-| ---- | ----------------------------------------------------------------------------------------------- |
-| type | Device type: one of traffic, meteo, sign, barrier, equivia, or lights.                          |
-| policy_id | The Ditto policy ID to associate with the device upon creation.                                 |
-| passwd    | Plaintext password. The service hashes it using SHA-512 before registering it in Hono. hono.py  |
-| cert_path | Path to a PEM client certificate file for certificate-based authentication.                     |
-
-### `[[tolls]]` array
-
-Each entry defines a geospatial sensor point used for Waze traffic queries. The
-service queries Waze for traffic events (jams, alerts, hazards) within a radius
-around each defined coordinate.
-
-| Key                  | Description                                                              |
-| -------------------- | ------------------------------------------------------------------------ |
-| name                 | A human-readable identifier for the sensor point.                        |
-| road                 | The road or highway name (informational).                                |
-| latitude / longitude | WGS-84 coordinates of the sensor point.                                  |
-| area_radius          | Radius in metres to query around the point (default: 1000). settings.py  |
-
-### `[signs]`, `[barriers]`, `[equivia]`, `[lights]` sections
-
-| Key          | Description                                                               |
-| ------------ | ------------------------------------------------------------------------- |
-| signs.dir    | Path to a directory containing road sign GeoJSON files.                   |
-| barriers.dir | Path to a single GeoJSON file containing road barrier features.           |
-| equivia.dir  | Path to a directory containing Equivia road infrastructure GeoJSON files. |
-| lights.file  | Path to a single GeoJSON file containing street light features.           |
-
-Equivia GeoJSON data must use the EPSG:3763 (PT-TM06) projected coordinate
-system; the service converts all coordinates to WGS-84 (EPSG:4326)
-automatically. The lights GeoJSON is expected to already use WGS-84
-coordinates.
-
-### Full example `config.toml`
-
-```toml
-env = "dev"
-polling_interval = 900
-
-[hono]
-device_registry = "https://your-hono-host:31947"
-http_adapter   = "https://your-hono-host:30501"
-tenant_id      = "my-tenant"
-# server_cert_path = "/etc/ssl/hono-ca.pem"  # optional
-
-[[devices]]
-type      = "meteo"
-policy_id = "<policy_id>"
-passwd    = "a-strong-password"
-
-[[devices]]
-type      = "traffic"
-policy_id = "<policy_id>"
-passwd    = "a-strong-password"
-
-[[devices]]
-type      = "sign"
-policy_id = "signs:default"
-passwd    = "a-strong-password"
-
-[[devices]]
-type      = "barrier"
-policy_id = "<policy_id>"
-passwd    = "a-strong-password"
-
-[[devices]]
-type      = "equivia"
-policy_id = "<policy_id>"
-passwd    = "a-strong-password"
-
-[[devices]]
-type      = "lights"
-policy_id = "<policy_id>"
-passwd    = "a-strong-password"
-
-[signs]
-dir = "data/Signs"
-
-[barriers]
-dir = "data/Barriers/Barreiras.geojson"
-
-[equivia]
-dir = "data/Equivia"
-
-[lights]
-file = "data/lights.geojson"
-
-[[tolls]]
-name      = "SensorPoint1"
-road      = "VCI"
-latitude  = 41.1453611
-longitude = -8.5811944
+```text
+and(ge(attributes/geotile,<lower_bound>),le(attributes/geotile,<upper_bound>))
 ```
-
-## Running the service
-
-The service is a standard FastAPI application. Run it with the Uvicorn ASGI server included in the `fastapi[standard]` installation:
-
-```sh
-# From the project root (where config.toml lives)
-uv fastapi run main.py
-```
-
-On startup, the lifespan handler will:
-
-1. Register all configured devices in Hono (skipping any that already).
-
-2. Fetch IPMA warning areas and populate the station cache.
-
-3. Execute an immediate full sync of meteorological measurements and warnings.
-
-## REST API
-
-The service exposes one HTTP endpoint after startup:
-
-```
-GET /meteorology?lat={latitude}&lon={longitude}
-```
-
-Returns a list of Ditto Thing IDs for the IPMA weather stations geographically
-closest to the provided coordinates. Returns HTTP 503 if no stations are loaded
-(e.g., if the meteo device is not configured).
-
-## Startup Behaviour & Batch Rate-Limiting
-
-When pushing large datasets (signs, barriers, Equivia), the service sends up to
-100 requests before pausing for 5 seconds to avoid overwhelming the Hono HTTP
-adapter. This cooldown is applied automatically and requires no configuration.
-For barrier updates an additional 10 ms sleep is inserted between individual
-requests.

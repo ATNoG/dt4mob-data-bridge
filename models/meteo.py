@@ -86,7 +86,7 @@ class Station(BaseModel, frozen=True):
     location: Point
     location_name: str
     geotile: int
-    expiry_ts: datetime = datetime.now(timezone.utc) + timedelta(days=1)
+    expiry_ts: datetime
 
     @field_serializer("expiry_ts")
     def serialize_time(self, time: datetime) -> str:

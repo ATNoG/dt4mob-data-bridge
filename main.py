@@ -3,23 +3,27 @@ import asyncio
 from loguru import logger
 
 from devices.device import Device
+from interfaces.ipma import populate_stations, populate_warning_areas
 from settings import settings
+from storage.session import SessionSingleton
 
 
 async def main():
-    logger.debug("These devices exist: {}", settings.devices)
+    await populate_stations()
+    await populate_warning_areas()
+
+    logger.info("Loaing the folowing devices: {}", settings.devices)
     devices = [Device.from_settings(d) for d in settings.devices]
 
-    logger.debug("devices contains {}", devices)
+    exceptions = await asyncio.gather(
+        *[d.run() for d in devices], return_exceptions=True
+    )
 
-    for device in devices:
-        logger.debug(
-            "This device exists: {},{},{}",
-            device.cert_path,
-            device.secret_key,
-            device.strategies,
-        )
-        await device.run()
+    for e in exceptions:
+        if isinstance(e, BaseException):
+            logger.error("An error has occured while running a device. Message: {}", e)
+
+    await SessionSingleton.close_session()
 
 
 if __name__ == "__main__":

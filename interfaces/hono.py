@@ -10,10 +10,10 @@ from settings import settings
 
 
 class HonoDevice:
-    def __init__(self, cert_path: str, secret_key: str):
+    def __init__(self, cert_path: str, private_key: str):
         self.session = ClientSession()
         self._ssl_context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-        self._ssl_context.load_cert_chain(cert_path)
+        self._ssl_context.load_cert_chain(cert_path, private_key)
 
         # Load Hono server certificate for verification if provided
         if settings.hono.server_cert_path:
@@ -53,8 +53,8 @@ class HonoDevice:
                     err.message,
                 )
 
-    def close_session(self):
-        self.session.close()
+    async def close_session(self):
+        await self.session.close()
 
 
 def print_size(k: str, obj: "object", identation: int = 0) -> None:

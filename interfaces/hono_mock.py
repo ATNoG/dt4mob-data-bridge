@@ -5,11 +5,11 @@ from interfaces.hono import HonoDevice
 
 
 class MockDevice(HonoDevice):
-    def __init__(self, cert_path: str, secret_key: str):
+    def __init__(self, cert_path: str, private_key: str):
         logger.info(
             "MOCK: Creating a mock device with certPath: {} and key: {}",
             cert_path,
-            secret_key,
+            private_key,
         )
 
     async def send_telemetry(self, message: BaseModel) -> None:

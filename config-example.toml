@@ -1,78 +1,25 @@
-# Environment name (e.g., "dev", "staging", "prod")
-env = "dev"
-
-# How often (in seconds) to poll for data (900 = 15 minutes)
-polling_interval = 900
-
 # Hono IoT platform configuration
 [hono]
-# URL to the Hono device registry API
-device_registry = "https://<your-hono-host>:<port>"
 # URL to the Hono HTTP adapter
 http_adapter = "https://<your-hono-host>:<port>"
 # Tenant identifier in Hono
 tenant_id = "<your-tenant-id>"
 
-# Device configurations
-# Each device entry registers a device with Hono using the specified credentials.
-# Uncomment only the device types you need.
-#
-# Fields:
-#   type      - Device type identifier (see available types below).
-#   policy_id - Hono credentials policy ID. Determines the access policy and
-#               permissions granted to the device within the Hono tenant.
-#   passwd    - Password used to authenticate the device with the Hono platform.
-#   NOTE: This will be replaced with x509-based authentication ASAP
-#
-# Available device types:
-#   meteo   - Meteorology data. Fetches weather station measurements and warnings
-#             from the IPMA (Portuguese weather service) API.
-#   traffic - Traffic data. Queries the Waze API for live traffic conditions
-#             around configured toll/sensor points.
-#   sign    - Road signs. Reads road sign data from local GeoJSON files and
-#             uploads sign information to Hono.
-#   barrier - Road barriers. Reads barrier geometry data from a local GeoJSON
-#             file and uploads barrier information to Hono.
-#   equivia - Road features/equipment. Reads road feature data from local JSON
-#             files and uploads equipment information to Hono.
-
 [[devices]]
-type = "meteo"
-policy_id = "<your-meteo-policy-id>"
-passwd = "<your-password>"
+# The namespace where the device has permission to manage things
+namespace = "internal"
+# The Eclipse Ditto policy id to be used on the Ditto Protocol messages
+policy_id = "meteo:default"
+# The path to the client's authentication certificate
+cert_path = "<path>"
+# The path to the client's authentication private key
+private_key = "<path>"
 
-# Path to signs data directory
-[signs]
-dir = "data/Signs"
-
-# Path to barriers GeoJSON file
-[barriers]
-dir = "data/Barriers/Barreiras.geojson"
-
-# Path to equivia data directory
-[equivia]
-dir = "data/Equivia"
-
-# Toll/sensor point definitions with geographic coordinates.
-# These are used by the traffic device to query Waze for live data.
-#
-# Fields:
-#   name        - Human-readable name for the sensor point.
-#   road        - Road name or identifier where the sensor is located.
-#   latitude    - Latitude of the sensor point.
-#   longitude   - Longitude of the sensor point.
-#   area_radius - Radius in meters around the sensor point to query Waze for
-#                 traffic data. Defaults to 1000 if omitted.
-[[tolls]]
-name = "SensorPoint1"
-road = "<road-name>"
-latitude = 0.0
-longitude = 0.0
-area_radius = 1000
-
-[[tolls]]
-name = "SensorPoint2"
-road = "<road-name>"
-latitude = 0.0
-longitude = 0.0
-area_radius = 1000
+# The strategies that this device will use to acquire data and modify things.
+# The strategies are developed in the strategies/ folder, and all follow a common structure.
+# Currently implemented are the TrafficStrategy, the MeteoStrategy, the
+# MeteoWarningsStrategy and the GeoJson Strategy.
+# To use a given strategy, set its type and needed information in the
+# `strategies` table of the device.
+# A device can have any number of strategies as long as it has at least one strategy.
+strategies = [{type="meteo", subject="meteo"}, {type="meteo_warnings", subject="meteo"}]

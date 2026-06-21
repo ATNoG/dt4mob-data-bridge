@@ -69,7 +69,7 @@ class TrafficStrategy(BaseStrategy):
             # TODO: create enough features to maximize the data limit of Hono, reducing the total messages that need to be sent
 
             jam_envelope = self._create_envelope_raw(
-                merge_topic, value=jam_feature, path="/features/alerts"
+                merge_topic, value=jam_feature, path=f"/features/jams/{i}"
             )
             envelopes.append(jam_envelope)
 
