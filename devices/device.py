@@ -3,7 +3,7 @@ from typing import List
 
 from loguru import logger
 
-from interfaces.hono_mock import MockDevice
+from interfaces.hono import HonoDevice
 from settings import DeviceSettings
 from strategies import acquire_strategies
 from strategies.strategy import BaseStrategy
@@ -20,7 +20,7 @@ class Device:
         self.cert_path = cert_path
         self.private_key = private_key
         self.strategies = strategies
-        self.hono_conn = MockDevice(cert_path, private_key)
+        self.hono_conn = HonoDevice(cert_path, private_key)
 
     @classmethod
     def from_settings(cls, settings: DeviceSettings) -> "Device":
