@@ -33,18 +33,22 @@ class Device:
         )
 
     async def run(self) -> None:
-        for strategy in self.strategies:
-            messages = await strategy.get_telemetry()
+        try:
+            for strategy in self.strategies:
+                messages = await strategy.get_telemetry()
 
-            exceptions = await asyncio.gather(
-                *[self.hono_conn.send_telemetry(message) for message in messages],
-                return_exceptions=True,
-            )
+                exceptions = await asyncio.gather(
+                    *[self.hono_conn.send_telemetry(message) for message in messages],
+                    return_exceptions=True,
+                )
 
-            for e in exceptions:
-                if isinstance(e, BaseException):
-                    logger.error(
-                        "An exception has occured while running a device with cert: {}. Message: {}",
-                        self.cert_path,
-                        e,
-                    )
+                for e in exceptions:
+                    if isinstance(e, BaseException):
+                        logger.error(
+                            "An exception has occured while running a device with cert: {}. Message: {}",
+                            self.cert_path,
+                            e,
+                        )
+
+        finally:
+            await self.hono_conn.close_session()

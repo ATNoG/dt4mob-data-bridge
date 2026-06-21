@@ -28,30 +28,29 @@ class HonoDevice:
 
         logger.debug("Sending the payload {}", json.dumps(jason))
 
-        resp = await self.session.post(
+        async with self.session.post(
             url,
             json=jason,
             ssl=self._ssl_context,
-        )
+        ) as resp:
+            try:
+                resp.raise_for_status()
+            except ClientResponseError as err:
+                if err.status == 413:
+                    dump = dumps(jason)
+                    logger.error(
+                        "The entity is too large. \n\t n\t Size: {}",
+                        len(dump.encode("utf-8")),
+                    )
 
-        try:
-            resp.raise_for_status()
-        except ClientResponseError as err:
-            if err.status == 413:
-                dump = dumps(jason)
-                logger.error(
-                    "The entity is too large. \n\t n\t Size: {}",
-                    len(dump.encode("utf-8")),
-                )
+                    print_size("root", jason)
 
-                print_size("root", jason)
-
-            else:
-                logger.error(
-                    "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
-                    err.status,
-                    err.message,
-                )
+                else:
+                    logger.error(
+                        "An error has occured while sending telemetry.\n\t Status: {}\n\t Msg: {}",
+                        err.status,
+                        err.message,
+                    )
 
     async def close_session(self):
         await self.session.close()

@@ -21,19 +21,19 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
     """
     session = SessionSingleton.get_session()
     logger.debug("Querying IPMA for new measurements")
-    geojson = await session.get(
+    async with session.get(
         "https://api.ipma.pt/open-data/observation/meteorology/stations/obs-surface.geojson"
-    )
-    try:
-        geojson.raise_for_status()
-    except ClientResponseError as e:
-        logger.error(
-            "An error has occured while getting new measurements from IPMA: {}",
-            e.message,
-        )
-        raise RuntimeError("Could not get measurements from IPMA")
+    ) as geojson:
+        try:
+            geojson.raise_for_status()
+        except ClientResponseError as e:
+            logger.error(
+                "An error has occured while getting new measurements from IPMA: {}",
+                e.message,
+            )
+            raise RuntimeError("Could not get measurements from IPMA")
 
-    data = json.loads(await geojson.text())["features"]
+        data = json.loads(await geojson.text())["features"]
     current_time = datetime.now(timezone.utc)
 
     res = []
@@ -85,21 +85,20 @@ async def populate_stations() -> None:
 async def get_meteorology_warnings() -> Dict[Station, List[Warning]]:
     session = SessionSingleton.get_session()
     logger.debug("Querying IPMA for new meteorologic warnings")
-    response = await session.get(
+    async with session.get(
         "https://api.ipma.pt/open-data/forecast/warnings/warnings_www.json"
-    )
+    ) as response:
+        try:
+            response.raise_for_status()
+        except ClientResponseError as e:
+            logger.error(
+                "An error has occured while querying for the meteorologic warnings: {}",
+                e.message,
+            )
 
-    try:
-        response.raise_for_status()
-    except ClientResponseError as e:
-        logger.error(
-            "An error has occured while querying for the meteorologic warnings: {}",
-            e.message,
-        )
+            return {}
 
-        return {}
-
-    data = await response.json()
+        data = await response.json()
     ret = {}
     now = datetime.now(timezone.utc)
     try:
@@ -143,16 +142,19 @@ async def populate_warning_areas() -> None:
     logger.debug("Populating the warning areas in the Station Singleton")
     session = SessionSingleton.get_session()
 
-    req = await session.get("https://api.ipma.pt/open-data/distrits-islands.json")
-    try:
-        req.raise_for_status()
-    except Exception as e:
-        logger.error(
-            "An error has occured while getting the warning areas from IPMA API, {}", e
-        )
-        return
+    async with session.get(
+        "https://api.ipma.pt/open-data/distrits-islands.json"
+    ) as req:
+        try:
+            req.raise_for_status()
+        except Exception as e:
+            logger.error(
+                "An error has occured while getting the warning areas from IPMA API, {}",
+                e,
+            )
+            return
 
-    data = await req.json()
+        data = await req.json()
     areas = [WarningArea.model_validate(area) for area in data["data"]]
 
     logger.debug("Successfully acquired the warning areas {}", areas)

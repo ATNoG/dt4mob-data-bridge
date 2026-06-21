@@ -40,8 +40,10 @@ class StationSingleton:
                 for d in cls._stations
             )
 
-        closest = sorted((geodesic(p, poi).km, i) for p, i in coords)[:3]
-        logger.debug("The closest stations are {}", closest)
+        logger.debug("Sorting the meteo stations by distance")
+        distances = [(geodesic(p, poi).km, i) for p, i in coords]
+        closest = sorted(distances, key=lambda dist: dist)[:3]
+        logger.debug("The closest stations are {}", [(c[0], c[1].id) for c in closest])
 
         if all(distance > max_distance for distance, _ in closest):
             logger.error(
