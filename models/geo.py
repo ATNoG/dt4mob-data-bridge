@@ -1,6 +1,5 @@
 from typing import Iterator, List
 
-from geopy.distance import geodesic
 from pydantic import BaseModel, Field, RootModel
 
 
