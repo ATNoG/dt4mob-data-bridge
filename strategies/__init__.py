@@ -24,7 +24,7 @@ class _MeteoWarnings(_BaseType):
 
 class _Traffic(_BaseType):
     type: Literal["traffic"] = "traffic"
-    sensorName: str
+    sensor_name: str
     road: str
     latitude: float
     longitude: float
@@ -65,7 +65,7 @@ def _type_to_strategy(
                 namespace,
                 type.subject,
                 policyId,
-                type.sensorName,
+                type.sensor_name,
                 type.road,
                 type.latitude,
                 type.longitude,
