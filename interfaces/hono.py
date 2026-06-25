@@ -28,6 +28,14 @@ class HonoDevice:
 
         logger.debug("Sending the payload {}", json.dumps(jason))
 
+        dump = dumps(jason)
+        if len(dump.encode("utf-8")) > 4000:
+            logger.error(
+                "The entity is too large. Not sending the payload \n\t\n\t Size: {}",
+                len(dump.encode("utf-8")),
+            )
+            return
+
         async with self.session.post(
             url,
             json=jason,
@@ -39,7 +47,7 @@ class HonoDevice:
                 if err.status == 413:
                     dump = dumps(jason)
                     logger.error(
-                        "The entity is too large. \n\t n\t Size: {}",
+                        "The entity is too large. \n\t \n\t Size: {}",
                         len(dump.encode("utf-8")),
                     )
 

@@ -1,6 +1,5 @@
 import json
 import os
-from datetime import datetime, timedelta, timezone
 from typing import Any, Generator, List, final
 
 from loguru import logger
@@ -51,9 +50,16 @@ class GeoJsonStrategy(BaseStrategy):
         return []
 
     def envelope_from_geojson(self, jason: GeoJSON) -> List[DittoProtocolEnvelope]:
+        logger.debug("Creating envelope from GeoJSON: {}", jason.name)
         features = jason.features
 
         envelopes = []
+        name = jason.name
+        if "_PROV" in name:
+            name = name.removesuffix("_PROV")
+
+        self.subject = "-".join(s.lower() for s in name.split("_") if len(s) > 1)
+
         for feature in features:
             attributes = feature.properties
             coords = feature.geometry
@@ -75,13 +81,19 @@ class GeoJsonStrategy(BaseStrategy):
             if midpoint:
                 geotile = get_geotile(midpoint.latitude, midpoint.longitude, 31)
                 attributes["geotile"] = geotile
-            attributes["expiry_ts"] = datetime.now(timezone.utc) + timedelta(days=1)
+            # attributes["expiry_ts"] = (
+            #     datetime.now(timezone.utc) + timedelta(days=1)
+            # ).isoformat()
+            for key in list(attributes.keys()):
+                if attributes[key] is None:
+                    del attributes[key]
 
             id_key = next((key for key in attributes if "ID" in key), "")
             thing_id = attributes.get(id_key, None)
 
             topic = self._create_topic(str(thing_id))
             envelope = self._create_envelope(topic, attributes)
+            logger.debug("Appending envelope {}", envelope.topic)
             envelopes.append(envelope)
 
         return envelopes

@@ -1,6 +1,6 @@
 # Data Bridge
 
-Data Bridge is a FastAPI-based data integration service that polls
+Data Bridge is a data integration service that polls
 multiple road and meteorological data sources (IPMA, Waze, and local GeoJSON
 files) and forwards the normalized data to an Eclipse Hono IoT device registry
 using the Eclipse Ditto protocol over HTTP.

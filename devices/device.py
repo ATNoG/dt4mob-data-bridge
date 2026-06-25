@@ -1,4 +1,3 @@
-import asyncio
 from typing import List
 
 from loguru import logger
@@ -7,6 +6,7 @@ from interfaces.hono import HonoDevice
 from settings import DeviceSettings
 from strategies import acquire_strategies
 from strategies.strategy import BaseStrategy
+from utils.batch import batch_cooldown
 
 
 class Device:
@@ -37,18 +37,16 @@ class Device:
             for strategy in self.strategies:
                 messages = await strategy.get_telemetry()
 
-                exceptions = await asyncio.gather(
-                    *[self.hono_conn.send_telemetry(message) for message in messages],
-                    return_exceptions=True,
-                )
-
-                for e in exceptions:
-                    if isinstance(e, BaseException):
+                for i, message in enumerate(messages):
+                    try:
+                        await self.hono_conn.send_telemetry(message)
+                    except Exception as e:
                         logger.error(
                             "An exception has occured while running a device with cert: {}. Message: {}",
                             self.cert_path,
                             e,
                         )
+                    await batch_cooldown(i)
 
         finally:
             await self.hono_conn.close_session()
