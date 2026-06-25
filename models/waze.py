@@ -26,6 +26,8 @@ class HazardType(str, Enum):
     ON_ROAD_CONSTRUCTION = "HAZARD_ON_ROAD_CONSTRUCTION"
     OBJECT = "HAZARD_ON_ROAD_OBJECT"
     POT_HOLE = "HAZARD_ON_ROAD_POT_HOLE"
+    WEATHER = "HAZARD_WEATHER"
+    ROAD_LANE_CLOSED = "HAZARD_ON_ROAD_LANE_CLOSED"
 
 
 class RoadClosedType(str, Enum):
@@ -41,13 +43,11 @@ AlertSubtype = Union[JamType, HazardType, PoliceType, RoadClosedType, Literal[""
 
 
 class Alert(BaseModel):
+    id: str
     country: str = "PO"
     city: Optional[str] = None
     street: Optional[str] = None
-    confidence: int
-    reliability: int
     type: str
-    speed: float
     location: Point
     subtype: AlertSubtype
     pubMillis: datetime
@@ -62,29 +62,23 @@ class Alert(BaseModel):
 
 
 class Jam(BaseModel):
-    severity: int
-    country: str
+    id: int
+    line: PolyLine
     level: int
-    city: str
-    geometry: PolyLine
-    speedKMH: float
-    length: int
-    roadType: int
     street: str
-    pubMillis: datetime
+    city: str
+    updateMillis: Optional[datetime] = None
+    length: int
+    speed: float
 
-    @field_serializer("pubMillis")
-    def serialize_timestamp(self, dt: datetime) -> int:
-        return int(dt.timestamp() * 100)
+    @field_serializer("updateMillis")
+    def serialize_timestamp(self, dt: datetime | None) -> int | None:
+        if dt:
+            return int(dt.timestamp() * 100)
+        return None
 
 
 class WazeRequest(BaseModel):
-    startTimeMillis: datetime
-    endTimeMillis: datetime
     alerts: List[Alert] = []
     jams: List[Jam] = []
     geotile: int
-
-    @field_serializer("startTimeMillis", "endTimeMillis")
-    def serialize_timestamp(self, dt: datetime) -> int:
-        return int(dt.timestamp() * 100)
