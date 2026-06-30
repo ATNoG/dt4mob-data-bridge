@@ -19,7 +19,9 @@ Network access to the Waze CCP Traffic Data API for traffic and incident data.
 
 This document contains the instructions on how to use the Data Bridge, namely
 how to configure the different required aspects and what their functionality
-is.
+is. Additionally, it contains the instructions on how to deploy the Data Bridge,
+especially how it is packaged as either a Docker container or a Helm chart for
+deployment in a Kubernetes Cluster.
 
 It can be found in [docs/user.md](docs/user.md)
 
@@ -28,12 +30,4 @@ It can be found in [docs/user.md](docs/user.md)
 This section contains the instructions on how to expand the Data Bridge, namely
 how to add support for more devices and data sources.
 
-It can be found in [docs/user.md](docs/programmer.md)
-
-# Administrator Manual
-
-This section contains the instructions on how to deploy the Data Bridge,
-especially how it is packaged as either a Docker container or a Helm chart for
-deployment in a Kubernetes Cluster.
-
-It can be found in [docs/user.md](docs/admin.md)
+It can be found in [docs/programmer.md](docs/programmer.md)

@@ -1,4 +1,3 @@
-
 # Geotile Implementation Guide
 
 # Introduction
