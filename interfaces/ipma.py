@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Dict, List, Tuple
 
 from aiohttp import ClientResponseError
@@ -10,7 +10,6 @@ from models.geo import Point
 from models.meteo import Measurement, Station, Warning, WarningArea
 from storage.session import SessionSingleton
 from storage.station import StationSingleton
-from utils.geo import get_geotile
 
 
 async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
@@ -54,11 +53,9 @@ async def get_meteorology_measurements() -> List[Tuple[Station, Measurement]]:
         res.append(
             (
                 Station(
-                    expiry_ts=datetime.now(timezone.utc) + timedelta(days=1),
                     id=station_id,
                     location=point,
                     location_name=d["properties"]["localEstacao"],
-                    geotile=get_geotile(point.latitude, point.longitude, 31),
                 ),
                 Measurement(**properties),
             )

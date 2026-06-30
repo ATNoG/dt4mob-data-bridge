@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List, final
 
 from loguru import logger
@@ -31,6 +32,9 @@ class MeteoStrategy(BaseStrategy):
         attributes = station.model_dump()
         geotile = get_geotile(station.location.latitude, station.location.longitude, 31)
         attributes["geotile"] = geotile
+        attributes["expiry_ts"] = (
+            datetime.now(timezone.utc) + timedelta(days=1)
+        ).isoformat()
         features = {"meteorology": Feature(properties=measurement.model_dump())}
         topic = self._create_topic(str(station.id))
         return self._create_envelope(topic, attributes, features)

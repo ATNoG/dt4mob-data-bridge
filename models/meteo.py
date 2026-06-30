@@ -85,12 +85,6 @@ class Station(BaseModel, frozen=True):
     id: int
     location: Point
     location_name: str
-    geotile: int
-    expiry_ts: datetime
-
-    @field_serializer("expiry_ts")
-    def serialize_time(self, time: datetime) -> str:
-        return time.isoformat()
 
     def create_message(self, measurement: Measurement) -> dict[str, object]:
         return {
