@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from loguru import logger
 
@@ -6,6 +7,9 @@ from devices.device import Device
 from interfaces.ipma import populate_stations, populate_warning_areas
 from settings import settings
 from storage.session import SessionSingleton
+
+logger.remove()
+logger.add(sys.stderr, level=settings.log_level)
 
 
 async def main():

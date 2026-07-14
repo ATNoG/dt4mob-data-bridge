@@ -45,6 +45,7 @@ class Settings(BaseSettings):
         nested_model_default_partial_update=True,
     )
 
+    log_level: str = "INFO"
     hono: HonoSettings = HonoSettings()
     devices: List[DeviceSettings] = []
 
