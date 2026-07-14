@@ -21,10 +21,10 @@ class HonoSettings(BaseModel):
 
 class DeviceSettings(BaseModel):
     policy_id: str
-    # HACK: The namespace is configured by the certificate (?) but needs to go
+    # HACK: The subject is configured by the certificate CN but needs to go
     # on the topic, hence it also needing to be on the settings
-    # TODO: See if this namespace can be derived at runtime from the certificate
-    namespace: str
+    # TODO: See if this subject can be derived at runtime from the certificate
+    subject: str
     cert_path: str
     private_key: str
     strategies: List[StrategyType]

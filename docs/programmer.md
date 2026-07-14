@@ -311,13 +311,13 @@ As an example:
 def _type_to_strategy(
     type: StrategyType,
     policyId: str,
-    namespace: str,
+    subject: str,
 ) -> BaseStrategy:
     match type:
         (...)
         case _GeoJson():
             return GeoJsonStrategy(
-                namespace, type.subject, policyId, type.dir, type.file
+                subject, type.namespace, policyId, type.dir, type.file
             )
 ```
 

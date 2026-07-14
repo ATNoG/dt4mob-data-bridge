@@ -28,7 +28,7 @@ class Device:
             cert_path=settings.cert_path,
             private_key=settings.private_key,
             strategies=acquire_strategies(
-                settings.strategies, settings.policy_id, settings.namespace
+                settings.strategies, settings.policy_id, settings.subject
             ),
         )
 

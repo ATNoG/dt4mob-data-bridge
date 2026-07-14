@@ -16,13 +16,13 @@ from utils.geo import convert_coordinates, get_geotile, representative_point
 class GeoJsonStrategy(BaseStrategy):
     def __init__(
         self,
-        namespace: str,
         subject: str,
+        namespace: str,
         policyId: str,
         dir: str | None,
         file: str | None,
     ):
-        super().__init__(namespace, subject, policyId)
+        super().__init__(subject, namespace, policyId)
         if (dir is None) == (file is None):
             raise ValueError(
                 "The GeoJSON strategy can only parse either a 'dir' or a 'file', and one must exist. dir: {}; file: {}",
@@ -58,7 +58,7 @@ class GeoJsonStrategy(BaseStrategy):
         if "_PROV" in name:
             name = name.removesuffix("_PROV")
 
-        self.subject = "-".join(s.lower() for s in name.split("_") if len(s) > 1)
+        self.namespace = "-".join(s.lower() for s in name.split("_") if len(s) > 1)
 
         for feature in features:
             attributes = feature.properties

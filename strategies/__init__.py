@@ -11,7 +11,7 @@ from strategies.traffic import TrafficStrategy
 
 class _BaseType(BaseModel):
     type: str
-    subject: str
+    namespace: str
 
 
 class _Meteo(_BaseType):
@@ -53,17 +53,17 @@ StrategyType = Annotated[
 def _type_to_strategy(
     type: StrategyType,
     policyId: str,
-    namespace: str,
+    subject: str,
 ) -> BaseStrategy:
     match type:
         case _Meteo():
-            return MeteoStrategy(namespace, type.subject, policyId)
+            return MeteoStrategy(subject, type.namespace, policyId)
         case _MeteoWarnings():
-            return WarningsStrategy(namespace, type.subject, policyId)
+            return WarningsStrategy(subject, type.namespace, policyId)
         case _Traffic():
             return TrafficStrategy(
-                namespace,
-                type.subject,
+                subject,
+                type.namespace,
                 policyId,
                 type.sensor_name,
                 type.road,
@@ -72,16 +72,16 @@ def _type_to_strategy(
             )
         case _GeoJson():
             return GeoJsonStrategy(
-                namespace, type.subject, policyId, type.dir, type.file
+                subject, type.namespace, policyId, type.dir, type.file
             )
 
 
 def acquire_strategies(
     strategies: List[StrategyType],
     policyId: str,
-    namespace: str,
+    subject: str,
 ) -> List[BaseStrategy]:
     logger.debug("Acquiring strategies {} for policyId {}", strategies, policyId)
-    ret = [_type_to_strategy(s, policyId, namespace) for s in strategies]
+    ret = [_type_to_strategy(s, policyId, subject) for s in strategies]
     logger.debug("Acquired strategies {}", ret)
     return ret

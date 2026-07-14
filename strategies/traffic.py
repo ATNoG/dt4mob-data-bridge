@@ -10,8 +10,8 @@ from utils.geo import get_geotile
 class TrafficStrategy(BaseStrategy):
     def __init__(
         self,
-        namespace: str,
         subject: str,
+        namespace: str,
         policyId: str,
         sensorName: str,
         road: str,
@@ -19,7 +19,7 @@ class TrafficStrategy(BaseStrategy):
         longitude: float,
         radius: float = 1000,
     ):
-        super().__init__(namespace, subject, policyId)
+        super().__init__(subject, namespace, policyId)
 
         self.sensorName = sensorName
         self.road = road

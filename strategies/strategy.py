@@ -15,7 +15,7 @@ from models.ditto import (
 
 
 class BaseStrategy(ABC):
-    def __init__(self, namespace: str, subject: str, policyId: str) -> None:
+    def __init__(self, subject: str, namespace: str, policyId: str) -> None:
         self.namespace = namespace
         self.subject = subject
         self.policyId = policyId

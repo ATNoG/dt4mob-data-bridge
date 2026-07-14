@@ -58,12 +58,12 @@ is defined as follows:
 | `cert_path` | Path | null | Path to the device's x509 certificate, used for authenticating the specific device with the HTTP Adapter in Eclipse Hono. |
 | `private_key` | Path | null | Path to the certificate's corresponding private key. |
 | `policy_id` | String | null | `policy` that Eclipse Ditto will enforce over the commands that the Data Bridge will send over Eclipse Hono. |
-| `namespace` | str | null | Namespace to be used by the device in Eclipse Ditto. |
+| `subject` | str | null | Subject to be used by the device in Eclipse Ditto. |
 | `strategies` | Array | [] | Explained in higher detail in the following section |
 
 The ThingIds in Eclipse Ditto follow the already established
 `namespace:subject:id` pattern already existing in the infrastructure. The
-`namespace` is defined by the device, and the device will have control over
+`subject` is defined by the device, and the device will have control over
 only the Things on this namespace. It has to match the `Common Name` field of
 the provided x509 certificate.
 
@@ -75,13 +75,13 @@ This program's architecture is based on what is called `strategies`, which is a
 reusable module that defines what data the device should send to Eclipse Ditto.
 
 Each strategy will have to define at least a `type`, which is the discriminator
-among the different strategies, and a `subject`, which will define the
-`subject` part of the ThingId.
+among the different strategies, and a `namespace`, which will define the
+`namespace` part of the ThingId.
 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `type` | String | Discriminator of the strategy to use. |
-| `subject` | String | Subject to be used in the ThingId |
+| `namespace` | String | Namespace to be used in the ThingId |
 
 As of writing this manual, the following strategies exist:
 
@@ -104,7 +104,7 @@ To make a device use this strategy, the following object must be configured and 
 | Field | Type |  Description |
 | ----- | ---- | ----------- |
 | `type` | Literal | `meteo` |
-| `subject` | String | Subject to be used in the ThingId |
+| `namespace` | String | Namespace to be used in the ThingId |
 
 ## Meteorologic Warnings Strategy
 
@@ -118,7 +118,7 @@ To make a device use this strategy, the following object must be configured and 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `type` | Literal | `warnings` |
-| `subject` | String | Subject to be used in the ThingId |
+| `namespace` | String | Namespace to be used in the ThingId |
 
 ## Traffic Strategy
 
@@ -136,7 +136,7 @@ To make a device use this strategy, the following object must be configured and 
 | Field | Type |  Description |
 | ----- | ---- |  ----------- |
 | `type` | Literal | `traffic` |
-| `subject` | String | Subject to be used in the ThingId |
+| `namespace` | String | Namespace to be used in the ThingId |
 | `sensor_name` | String | The sensor's name to be used in the ThingId format. | 
 | `road` | String | The name of the road that this sensor is meant to be located. |
 | `latitude` | Float |  The geographical latitude, in WGS84, that the sensor will be located. |
@@ -162,7 +162,7 @@ To make a device use this strategy, the following object must be configured and 
 | Field | Type | Description |
 | ----- | ---- | ----------- |
 | `type` | Literal | `geojson` |
-| `subject` | String | Subject to be used in the ThingId |
+| `namespace` | String | Namespace to be used in the ThingId |
 | `file` | Path | The location of the file for the strategy to read |
 | `dir` | Path | The location of the directory that contains the GeoJSON files for the strategy to read |
 
@@ -221,10 +221,10 @@ DEVICES="[
     cert_path:<path>,
     private_key:<path>,
     policy_id:<str>,
-    namespace:<str>,
+    subject:<str>,
     strategies:[
       {
-        type:<str>,subject:<str>,
+        type:<str>,namespace:<str>,
       },
     ]
   }  
