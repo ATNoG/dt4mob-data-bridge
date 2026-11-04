@@ -201,6 +201,15 @@ Utilizar a instanciação direta é tão simples como executar o ficheiro
 ou executando `python main.py` no `venv` se usar qualquer outra ferramenta
 compatível com PEP-518).
 
+Se usar `pip`, instale as dependências fixadas em
+[requirements.txt](../requirements.txt) no ambiente virtual configurado e
+execute a aplicação a partir da raiz do projeto:
+
+```sh
+pip install -r requirements.txt
+python main.py
+```
+
 Neste caso, o ficheiro de configuração `config.toml` deve ser colocado na raiz
 do projeto, que será o diretório onde o ficheiro `main.py` está
 localizado. O Data Bridge carregará automaticamente esse ficheiro e aplicará as

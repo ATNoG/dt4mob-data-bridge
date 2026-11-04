@@ -204,6 +204,15 @@ file in the managed environment (by either using `uv run main.py` if using `uv`
 or by running `python main.py` in the `venv` if using any other PEP-518
 compliant tool).
 
+If using `pip`, install the pinned dependencies listed in
+[requirements.txt](../requirements.txt) into the configured virtual environment
+and then run the application from the project root:
+
+```sh
+pip install -r requirements.txt
+python main.py
+```
+
 In this case, the `config.toml` configuration file must be placed in the root
 of the project, which will be the directory where the `main.py` file is
 located. The Data Bridge will automatically load that file and apply the

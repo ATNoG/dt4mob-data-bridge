@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "Data_Bridge"
 version = "0.1.0"
@@ -24,3 +28,18 @@ ignore_missing_imports = true
 
 [tool.ruff.lint]
 extend-select = ["T20"]
+
+[tool.setuptools]
+py-modules = ["main", "settings"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+  "models*",
+  "devices*",
+  "storage*",
+  "interfaces*",
+  "strategies*",
+  "utils*",
+]
+namespaces = true
